@@ -53,7 +53,52 @@ export function ContentScreen({ menuId, submenuId, title }: ContentScreenProps) 
                 </div>
               </div>
               <p className="mt-3 font-mono text-xs text-primary lg:mt-4 lg:text-sm">
-                rdtr.lombokbaratkab.go.id
+                gistaru.atrbpn.go.id/rdtrinteraktif
+              </p>
+            </div>
+            <Button
+              size="lg"
+              className="mt-6 h-12 px-6 text-base font-semibold lg:mt-8 lg:h-14 lg:px-8 lg:text-lg"
+              onClick={() => navigateTo({ 
+                type: "qr-page", 
+                title: "RDTR Interaktif", 
+                url: "https://rdtr.lombokbaratkab.go.id",
+                description: "Peta Rencana Detail Tata Ruang interaktif untuk melihat zonasi dan peruntukan lahan di Kabupaten Lombok Barat."
+              })}
+            >
+              <QrCode className="mr-2 h-4 w-4 lg:h-5 lg:w-5" />
+              Lihat QR Code Lebih Besar
+            </Button>
+          </Card>
+        </main>
+      </div>
+    )
+  }
+
+  if (content.type === "text" && content.text === "QR_RTRW") {
+    return (
+      <div className="flex h-full flex-col">
+        <NavigationBar title={title} showBack />
+        <main className="flex flex-1 items-center justify-center bg-background p-4 lg:p-8">
+          <Card className="max-w-xl p-6 text-center shadow-xl lg:max-w-2xl lg:p-10">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 lg:mb-6 lg:h-20 lg:w-20">
+              <Globe className="h-7 w-7 text-accent lg:h-10 lg:w-10" />
+            </div>
+            <h2 className="text-xl font-bold text-foreground lg:text-3xl">RDTR Interaktif</h2>
+            <p className="mt-3 text-sm text-muted-foreground lg:mt-4 lg:text-lg">
+              Fitur ini memerlukan koneksi internet untuk mengakses peta interaktif.
+            </p>
+            <div className="mt-6 rounded-xl bg-muted/50 p-4 lg:mt-8 lg:rounded-2xl lg:p-6">
+              <p className="mb-3 text-xs font-medium text-muted-foreground lg:mb-4 lg:text-sm">
+                Scan QR Code untuk membuka di smartphone Anda:
+              </p>
+              <div className="flex justify-center">
+                <div className="rounded-lg border-4 border-primary/20 bg-card p-3 lg:rounded-xl lg:p-4">
+                  <QrCodePlaceholder url="https://gistaru.atrbpn.go.id/rdtrinteraktif/" />
+                </div>
+              </div>
+              <p className="mt-3 font-mono text-xs text-primary lg:mt-4 lg:text-sm">
+                gistaru.atrbpn.go.id/rdtrinteraktif
               </p>
             </div>
             <Button

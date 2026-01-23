@@ -82,9 +82,15 @@ export const menuItems: MenuItem[] = [
       { 
         id: "struktur", 
         title: "Struktur Organisasi", 
-        description: "Bagan organisasi (PDF)", 
+        description: "Bagan organisasi", 
         icon: <Users className="h-10 w-10" />,
-        hasDocuments: true
+        hasContent: true, 
+        content: {
+          type: "image", 
+          title: "Struktur Organisasi DPMPTSP",
+          imageUrl: "/struktur-organisasi-fix.png", // Pastikan nama file ini sesuai
+          alt: "Bagan Struktur Organisasi"
+        }
       },
       { 
         id: "pejabat", 
@@ -184,6 +190,18 @@ export const menuItems: MenuItem[] = [
           text: "OFFLINE_RDTR"
         }
       },
+      { 
+        id: "peta-rtrw-qr", 
+        title: "Peta RTRW", 
+        description: "Website peta tata ruang", 
+        icon: <Globe className="h-10 w-10" />,
+        hasContent: true,
+        content: {
+          type: "text",
+          title: "Peta RTRW",
+          text: "QR_RTRW"
+        }
+      },
     ]
   },
   {
@@ -259,12 +277,12 @@ export const menuItems: MenuItem[] = [
   },
   {
     id: "peta-potensi",
-    title: "Peta Potensi Lobar",
+    title: "SIPETA LOBAR",
     description: "Scan QR untuk melihat peta",
     icon: <QrCode className="h-12 w-12" />,
     isQrCode: true,
     qrUrl: "https://potensi.lombokbaratkab.go.id",
-    qrDescription: "Peta Potensi Lombok Barat menyajikan informasi lengkap mengenai potensi investasi, pariwisata, pertanian, dan sumber daya alam di Kabupaten Lombok Barat. Scan QR Code untuk mengakses peta interaktif di smartphone Anda."
+    qrDescription: "Sistem Informasi Pemetaan Lokasi dan Rekomendasi Usaha Lombok Barat. Scan QR Code untuk mengakses peta interaktif di smartphone Anda."
   },
 ]
 
@@ -288,7 +306,7 @@ export const documents: Record<string, DocumentItem[]> = {
     { id: "struktur-org", title: "Struktur Organisasi DPMPTSP", description: "Bagan struktur", pdfUrl: "/docs/struktur.pdf" },
   ],
   "ipro": [
-    { id: "ipro-2024", title: "IPRO Gili Gede 2022", description: "Investment Project Ready to Offer", pdfUrl: "/docs/ipro.pdf" },
+    { id: "ipro-giligede", title: "IPRO Gili Gede 2022", description: "Investment Project Ready to Offer", pdfUrl: "/docs/ipro.pdf" },
     { id: "ipro-pariwisata", title: "IPRO Sektor Pariwisata", description: "Proyek investasi pariwisata", pdfUrl: "/docs/ipro-pariwisata.pdf" },
     { id: "ipro-industri", title: "IPRO Sektor Industri", description: "Proyek investasi industri", pdfUrl: "/docs/ipro-industri.pdf" },
     { id: "ipro-pertanian", title: "IPRO Sektor Pertanian", description: "Proyek investasi pertanian", pdfUrl: "/docs/ipro-pertanian.pdf" },
@@ -299,18 +317,28 @@ export const documents: Record<string, DocumentItem[]> = {
     // { id: "regulasi-lkpm", title: "Regulasi LKPM", description: "Peraturan terkait", pdfUrl: "/docs/regulasi-lkpm.pdf" },
   ],
   "sp-sop": [
-    { id: "sp-perizinan", title: "Standar Pelayanan Perizinan", description: "SP perizinan umum", pdfUrl: "/docs/sp-perizinan.pdf" },
-    { id: "sop-oss", title: "SOP Layanan OSS", description: "Prosedur OSS", pdfUrl: "/docs/sop-oss.pdf" },
-    { id: "sop-imb", title: "SOP Izin Mendirikan Bangunan", description: "Prosedur IMB", pdfUrl: "/docs/sop-imb.pdf" },
-    { id: "sop-siup", title: "SOP SIUP", description: "Prosedur SIUP", pdfUrl: "/docs/sop-siup.pdf" },
-    { id: "maklumat", title: "Maklumat Pelayanan", description: "Janji layanan", pdfUrl: "/docs/maklumat.pdf" },
-    { id: "sp-pengaduan", title: "SP Penanganan Pengaduan", description: "Prosedur pengaduan", pdfUrl: "/docs/sp-pengaduan.pdf" },
+    { id: "sop-sicantik", title: "SOP SiCANTIK", description: "SOP Sicantik", pdfUrl: "/docs/SOP-SiCANTIK.pdf" },
+    { id: "sop-pbg", title: "SOP PBG", description: "SOP PBG", pdfUrl: "/docs/SOP-PBG-DPMPTSP.pdf" },
+    { id: "sp-putr", title: "SOP PUTR", description: "SOP PUTR", pdfUrl: "/docs/SOP-putr.pdf" },
+    { id: "sp-sop-bappenda", title: "SP dan SOP Bappenda", description: "Alur SOP Bappenda", pdfUrl: "/docs/SP-DAN-SOP-alur-bapenda.pdf" },
+    { id: "sp-sop-dikes", title: "SP dan SOP Dikes", description: "Alur SOP Dikes", pdfUrl: "/docs/SP-DAN-SOP-alur-dikes.pdf" },
+    { id: "sp-sop-dishub", title: "SP dan SOP Dishub", description: "Alur SOP Dishub", pdfUrl: "/docs/SP-DAN-SOP-alur-dishub.pdf" },
+    { id: "sp-sop-diskominfotik", title: "SP dan SOP Diskominfotik", description: "Alur SOP Diskominfotik", pdfUrl: "/docs/SP-DAN-SOP-alur-diskominfotik.pdf" },
+    { id: "sp-sop-diskop", title: "SP dan SOP Diskop", description: "Alur SOP Diskop", pdfUrl: "/docs/SP-DAN-SOP-alur-diskop.pdf" },
+    { id: "sp-sop-dislutkan", title: "SP dan SOP Dislutkan", description: "Alur SOP Dislutkan", pdfUrl: "/docs/SP-DAN-SOP-alur-dislutkan.pdf" },
+    { id: "sp-sop-disnaker", title: "SP dan SOP Disnaker", description: "Alur SOP Disnaker", pdfUrl: "/docs/SP-DAN-SOP-alur-disnaker.pdf" },
+    { id: "sp-sop-disperindag", title: "SP dan SOP Disperindag", description: "Alur SOP Disperindag", pdfUrl: "/docs/SP-DAN-SOP-alur-disperindag.pdf" },
+    { id: "sp-sop-lingkunganHidup", title: "SP dan SOP Lingkungan Hidup", description: "Alur SOP Lingkungan Hidup", pdfUrl: "/docs/SP-DAN-SOP-alur-LH.pdf" },
+    { id: "sp-sop-pangan", title: "SP dan SOP Dikpangan", description: "Alur SOP Dikpangan", pdfUrl: "/docs/SP-DAN-SOP-alur-pangan.pdf" },
+    { id: "sp-sop-perkim", title: "SP dan SOP Perkim", description: "Alur SOP Perkim", pdfUrl: "/docs/SP-DAN-SOP-alur-perkim.pdf" },
+    { id: "sp-sop-pertanian", title: "SP dan SOP Pertanian", description: "Alur SOP Pertanian", pdfUrl: "/docs/SP-DAN-SOP-alur-pertanian.pdf" },
+    { id: "sp-sop-dpmptsp", title: "SP dan SOP DPMPTSP", description: "SOP DPMPTSP", pdfUrl: "/docs/SP-DAN-SOP-DPMPTSP.pdf" },
   ],
   "rdtr-dokumen": [
     { id: "rdtr-gerung", title: "RDTR Kawasan Gerung", description: "Rencana detail", pdfUrl: "/docs/rdtr-gerung.pdf" },
-    { id: "rdtr-lembar", title: "RDTR Kawasan Lembar", description: "Rencana detail", pdfUrl: "/docs/rdtr-lembar.pdf" },
-    { id: "rdtr-senggigi", title: "RDTR Kawasan Senggigi", description: "Rencana detail", pdfUrl: "/docs/rdtr-senggigi.pdf" },
-    { id: "peta-rtrw", title: "Peta RTRW Lombok Barat", description: "Peta tata ruang", pdfUrl: "/docs/peta-rtrw.pdf" },
+    { id: "rdtr-sekotong", title: "RDTR Kawasan Lembar", description: "Rencana detail", pdfUrl: "/docs/rdtr-lembar.pdf" },
+    { id: "rdtr-senggigi", title: "RDTR Kawasan Senggigi", description: "Rencana detail", pdfUrl: "/docs/RDTR-senggigi-batulayar.pdf" },
+    // { id: "peta-rtrw", title: "Peta RTRW Lombok Barat", description: "Peta tata ruang", pdfUrl: "/docs/peta-rtrw.pdf" },
   ],
   "persyaratan-umum": [
     { id: "syarat-umum", title: "Persyaratan Umum Perizinan", description: "Dokumen wajib", pdfUrl: "/docs/syarat-umum.pdf" },

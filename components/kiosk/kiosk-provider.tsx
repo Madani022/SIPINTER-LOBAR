@@ -40,14 +40,20 @@ export interface SubMenuItem {
   content?: ContentData
 }
 
+// --- UPDATE BAGIAN INI ---
 export interface ContentData {
-  type: "text" | "points" | "profile" | "officials"
+  // Tambahkan "image" ke dalam type
+  type: "text" | "points" | "profile" | "officials" | "image"
   title?: string
   text?: string
   points?: string[]
   officials?: OfficialData[]
   contactInfo?: ContactInfo
+  // Tambahkan properti untuk gambar
+  imageUrl?: string
+  alt?: string
 }
+// -------------------------
 
 export interface OfficialData {
   name: string

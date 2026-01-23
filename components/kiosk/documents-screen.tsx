@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState } from "react"
 import { useKiosk, type DocumentItem } from "./kiosk-provider"
-import { getDocuments } from "@/lib/kiosk-data"
+import { getDocuments } from "@/lib/kiosk-data" // KEMBALI MENGGUNAKAN INI
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { NavigationBar } from "./navigation-bar"
@@ -13,49 +13,36 @@ interface DocumentsScreenProps {
   categoryTitle: string
 }
 
-type FilterCategory = "semua" | "sp" | "sop" | "formulir" | "pedoman" | "surat-edaran" | "lainnya"
-
-const filterOptions: { value: FilterCategory; label: string }[] = [
-  { value: "semua", label: "Semua" },
-  { value: "sp", label: "SP" },
-  { value: "sop", label: "SOP" },
-  { value: "formulir", label: "Formulir" },
-  { value: "pedoman", label: "Pedoman" },
-  { value: "surat-edaran", label: "Surat Edaran" },
-  { value: "lainnya", label: "Lainnya" },
-]
-
 const ITEMS_PER_PAGE = 8
 
 export function DocumentsScreen({ categoryId, categoryTitle }: DocumentsScreenProps) {
   const { navigateTo, trackDocument } = useKiosk()
   const [currentPage, setCurrentPage] = useState(0)
-  const [activeFilter, setActiveFilter] = useState<FilterCategory>("semua")
 
+  // 1. KEMBALIKAN SUMBER DATA ASLI (Agar dokumen muncul lagi)
   const allDocuments = getDocuments(categoryId)
-  
-  // Filter documents based on active filter
-  const filteredDocuments = useMemo(() => {
-    if (activeFilter === "semua") return allDocuments
-    return allDocuments.filter(doc => doc.category === activeFilter)
-  }, [allDocuments, activeFilter])
 
-  const totalPages = Math.ceil(filteredDocuments.length / ITEMS_PER_PAGE)
-  const documents = filteredDocuments.slice(
+  // 2. LOGIC PAGINATION (Langsung dari allDocuments, tanpa filter kategori lagi)
+  const totalPages = Math.ceil(allDocuments.length / ITEMS_PER_PAGE)
+  const documents = allDocuments.slice(
     currentPage * ITEMS_PER_PAGE,
     (currentPage + 1) * ITEMS_PER_PAGE
   )
-
-  // Reset page when filter changes
-  const handleFilterChange = (filter: FilterCategory) => {
-    setActiveFilter(filter)
-    setCurrentPage(0)
-  }
 
   const handleDocumentClick = (doc: DocumentItem) => {
     trackDocument(doc.id, doc.title)
     navigateTo({ type: "pdf-viewer", document: doc })
   }
+
+  // Logic Grid Asli Anda
+  const getGridClass = () => {
+    const count = documents.length
+    if (count <= 4) return "grid-cols-2 grid-rows-2"
+    if (count <= 6) return "grid-cols-3 grid-rows-2"
+    return "grid-cols-4 grid-rows-2"
+  }
+
+  // --- RENDER ---
 
   if (allDocuments.length === 0) {
     return (
@@ -73,63 +60,14 @@ export function DocumentsScreen({ categoryId, categoryTitle }: DocumentsScreenPr
     )
   }
 
-  // Calculate grid based on document count
-  const getGridClass = () => {
-    const count = documents.length
-    if (count <= 4) return "grid-cols-2 grid-rows-2"
-    if (count <= 6) return "grid-cols-3 grid-rows-2"
-    return "grid-cols-4 grid-rows-2"
-  }
-
-  // Check if we should show filters (only for sp-sop category which has mixed document types)
-  const showFilters = categoryId === "sp-sop"
-
   return (
     <div className="flex h-full flex-col">
       <NavigationBar title={categoryTitle} showBack />
 
-      {/* Filter Chips */}
-      {showFilters && (
-        <div className="border-b border-border bg-card px-4 py-3 lg:px-8 lg:py-4">
-          <div className="flex flex-wrap items-center gap-2 lg:gap-3">
-            <span className="mr-2 text-xs font-medium text-muted-foreground lg:text-sm">Filter:</span>
-            {filterOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => handleFilterChange(option.value)}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all lg:px-5 lg:py-2 lg:text-base ${
-                  activeFilter === option.value
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* --- FILTER DIHAPUS DISINI --- */}
 
       {/* Documents Grid */}
       <main className="flex-1 bg-background p-3 lg:p-6">
-        {filteredDocuments.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-center">
-              <FileText className="mx-auto h-16 w-16 text-muted-foreground/50 lg:h-20 lg:w-20" />
-              <p className="mt-4 text-lg font-medium text-muted-foreground lg:text-2xl">
-                Tidak ada dokumen untuk filter ini
-              </p>
-              <button
-                type="button"
-                onClick={() => handleFilterChange("semua")}
-                className="mt-4 text-primary underline"
-              >
-                Tampilkan semua dokumen
-              </button>
-            </div>
-          </div>
-        ) : (
           <div className={`grid h-full gap-3 lg:gap-5 ${getGridClass()}`}>
             {documents.map((doc) => (
               <Card
@@ -145,6 +83,8 @@ export function DocumentsScreen({ categoryId, categoryTitle }: DocumentsScreenPr
                   <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground group-hover:text-primary-foreground/80 lg:mt-1 lg:text-sm">
                     {doc.description}
                   </p>
+                  
+                  {/* Tag kategori tetap ada sebagai info, tapi bukan filter */}
                   {doc.category && (
                     <span className="mt-1.5 inline-block rounded-full bg-muted/50 px-2 py-0.5 text-xs font-medium uppercase group-hover:bg-card/20 lg:mt-2 lg:px-3 lg:py-1">
                       {doc.category}
@@ -154,10 +94,9 @@ export function DocumentsScreen({ categoryId, categoryTitle }: DocumentsScreenPr
               </Card>
             ))}
           </div>
-        )}
       </main>
 
-      {/* Pagination */}
+      {/* Pagination Footer */}
       {totalPages > 1 && (
         <footer className="border-t border-border bg-card px-4 py-3 lg:px-8 lg:py-4">
           <div className="flex items-center justify-center gap-4 lg:gap-6">
@@ -197,7 +136,7 @@ export function DocumentsScreen({ categoryId, categoryTitle }: DocumentsScreenPr
             </Button>
           </div>
           <p className="mt-2 text-center text-xs text-muted-foreground lg:mt-3 lg:text-sm">
-            Halaman {currentPage + 1} dari {totalPages} ({filteredDocuments.length} dokumen)
+            Halaman {currentPage + 1} dari {totalPages} ({allDocuments.length} dokumen)
           </p>
         </footer>
       )}

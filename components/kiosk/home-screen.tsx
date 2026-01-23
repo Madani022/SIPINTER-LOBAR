@@ -4,7 +4,7 @@ import { useKiosk } from "./kiosk-provider"
 import { menuItems } from "@/lib/kiosk-data"
 import { Card } from "@/components/ui/card"
 import { StatusIndicator } from "./status-indicator"
-import { Settings } from "lucide-react"
+import Image from "next/image"
 
 export function HomeScreen() {
   const { navigateTo, trackMenu } = useKiosk()
@@ -24,9 +24,7 @@ export function HomeScreen() {
     }
   }
 
-  const handleAdminClick = () => {
-    navigateTo({ type: "admin" })
-  }
+  // HAPUS: const handleAdminClick ... (Sudah tidak dipakai)
 
   return (
     <div className="flex h-full flex-col">
@@ -34,39 +32,36 @@ export function HomeScreen() {
       <header className="bg-primary px-4 py-4 text-primary-foreground lg:px-10 lg:py-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 lg:gap-6">
-            {/* Logo Placeholder - Replace with actual logo */}
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-card/20 backdrop-blur-sm lg:h-20 lg:w-20">
-              <svg
-                viewBox="0 0 100 100"
-                className="h-10 w-10 lg:h-14 lg:w-14"
-                fill="currentColor"
-              >
-                <path d="M50 10 L90 30 L90 70 L50 90 L10 70 L10 30 Z" fill="none" stroke="currentColor" strokeWidth="4"/>
-                <text x="50" y="58" textAnchor="middle" fontSize="24" fontWeight="bold">PM</text>
-              </svg>
+            
+            {/* Logo Image */}
+            <div className="relative h-16 w-16 rounded-2xl overflow-hidden bg-white/10 p-1 backdrop-blur-sm lg:h-24 lg:w-24">
+                <Image 
+                    src="/logoSipinterLobar.png" 
+                    alt="Logo SIPINTER" 
+                    fill
+                    className="object-contain"
+                    priority
+                />
             </div>
+
             <div>
               <h1 className="text-2xl font-extrabold tracking-tight lg:text-4xl">
-                LIVING Mandiri
+                SIPINTER LOBAR
               </h1>
               <p className="text-xs font-medium opacity-90 lg:mt-1 lg:text-lg">
-                Informasi Layanan Investasi & Perizinan
+                Sistem Informasi Pelayanan Investasi & Perizinan Terpadu
               </p>
               <p className="text-xs opacity-75 lg:text-base">
                 DPMPTSP Kabupaten Lombok Barat
               </p>
             </div>
           </div>
+
           <div className="flex items-center gap-2 lg:gap-4">
             <StatusIndicator />
-            <button
-              type="button"
-              onClick={handleAdminClick}
-              className="rounded-full bg-card/10 p-2 backdrop-blur-sm transition-colors hover:bg-card/20 lg:p-3"
-              title="Admin Panel"
-            >
-              <Settings className="h-4 w-4 lg:h-5 lg:w-5" />
-            </button>
+            
+            {/* HAPUS: Tombol Settings/Admin Button di sini */}
+            
             <div className="hidden rounded-2xl bg-card/10 px-4 py-3 text-center backdrop-blur-sm lg:block lg:px-6 lg:py-4">
               <p className="text-xs font-medium opacity-80 lg:text-sm">Sentuh menu untuk memulai</p>
               <p className="text-lg font-bold lg:text-2xl">Selamat Datang</p>

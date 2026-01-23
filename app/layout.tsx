@@ -10,7 +10,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'LIVING Mandiri - DPMPTSP',
+  title: 'SIPINTER LOBAR - DPMPTSP',
   description: 'Layanan Informasi dan Navigasi Mandiri - Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu',
   generator: 'v0.app',
   icons: {
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
         media: '(prefers-color-scheme: dark)',
       },
       {
-        url: '/icon.svg',
+        url: '/lombok-barat_bg-white-round.svg',
         type: 'image/svg+xml',
       },
     ],
