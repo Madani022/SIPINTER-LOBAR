@@ -1,25 +1,18 @@
-import { 
-  Building2, FileText, Landmark, Users, QrCode, Briefcase, 
-  ClipboardList, Award, ScrollText, BookOpen, FileCheck, 
-  Shield, MapPin, Video, Target, ListChecks, UserCircle,
-  Factory, HeartPulse, Leaf, Building, Bus, Palmtree,
-  Users2, HardHat, Fish, Wheat, GraduationCap, BadgeCheck,
-  Map, Globe, Phone, FileSpreadsheet, Info
-} from "lucide-react"
-import type { MenuItem, SubMenuItem, DocumentItem, SectorItem, ContentData } from "@/components/kiosk/kiosk-provider"
+import type { MenuItem, SubMenuItem, DocumentItem, SectorItem } from "@/components/kiosk/kiosk-provider"
 
+// --- DATA MENU STATIS DENGAN KONEKSI DB (SLUG) ---
 export const menuItems: MenuItem[] = [
   {
     id: "profil",
     title: "Profil DPMPTSP",
     description: "Informasi tentang instansi",
-    icon: <Building2 className="h-12 w-12" />,
+    icon: "Building2", // Ubah jadi String
     submenu: [
       { 
         id: "tentang", 
         title: "Tentang", 
         description: "Ringkasan fungsi dan peran", 
-        icon: <Info className="h-10 w-10" />,
+        icon: "Info",
         hasContent: true,
         content: {
           type: "text",
@@ -31,7 +24,7 @@ export const menuItems: MenuItem[] = [
         id: "profil-instansi", 
         title: "Profil DPMPTSP", 
         description: "Alamat, jam layanan, kontak", 
-        icon: <Building2 className="h-10 w-10" />,
+        icon: "Building2",
         hasContent: true,
         content: {
           type: "profile",
@@ -49,7 +42,7 @@ export const menuItems: MenuItem[] = [
         id: "visi-misi", 
         title: "Visi dan Misi", 
         description: "Visi dan misi instansi", 
-        icon: <Target className="h-10 w-10" />,
+        icon: "Target",
         hasContent: true,
         content: {
           type: "points",
@@ -67,7 +60,7 @@ export const menuItems: MenuItem[] = [
         id: "tupoksi", 
         title: "Tugas dan Fungsi", 
         description: "Tugas pokok dan fungsi", 
-        icon: <ListChecks className="h-10 w-10" />,
+        icon: "ListChecks",
         hasContent: true,
         content: {
           type: "points",
@@ -83,20 +76,17 @@ export const menuItems: MenuItem[] = [
         id: "struktur", 
         title: "Struktur Organisasi", 
         description: "Bagan organisasi", 
-        icon: <Users className="h-10 w-10" />,
-        hasContent: true, 
-        content: {
-          type: "image", 
-          title: "Struktur Organisasi DPMPTSP",
-          imageUrl: "/struktur-organisasi-fix.png", // Pastikan nama file ini sesuai
-          alt: "Bagan Struktur Organisasi"
-        }
+        icon: "Users",
+        // PENTING: Struktur Org biasanya 1 Gambar/PDF.
+        // Jika ingin PDF dinamis, ubah jadi hasDocuments: true dan beri categorySlug "struktur"
+        hasDocuments: true, 
+        categorySlug: "struktur"
       },
       { 
         id: "pejabat", 
         title: "Profil Pejabat Struktural", 
         description: "Daftar pejabat", 
-        icon: <UserCircle className="h-10 w-10" />,
+        icon: "UserCircle",
         hasContent: true,
         content: {
           type: "officials",
@@ -115,7 +105,7 @@ export const menuItems: MenuItem[] = [
         id: "stand-pelayanan", 
         title: "Stand Pelayanan", 
         description: "Video profil pelayanan", 
-        icon: <Video className="h-10 w-10" />,
+        icon: "Video",
         hasVideo: true,
         videoUrl: "https://www.youtube.com/embed/9d1cn5yVsJI?si=b7US4Ts8-womqrRH"
       },
@@ -125,21 +115,23 @@ export const menuItems: MenuItem[] = [
     id: "penanaman-modal",
     title: "Penanaman Modal",
     description: "Informasi investasi",
-    icon: <Briefcase className="h-12 w-12" />,
+    icon: "Briefcase",
     submenu: [
       { 
         id: "ipro", 
         title: "IPRO", 
         description: "Investment Project Ready to Offer", 
-        icon: <Award className="h-10 w-10" />,
-        hasDocuments: true
+        icon: "Award",
+        hasDocuments: true,
+        categorySlug: "ipro" // <--- CONNECT KE DB
       },
       { 
         id: "lkpm", 
         title: "LKPM", 
         description: "Laporan Kegiatan Penanaman Modal", 
-        icon: <FileSpreadsheet className="h-10 w-10" />,
-        hasDocuments: true
+        icon: "FileSpreadsheet",
+        hasDocuments: true,
+        categorySlug: "lkpm" // <--- CONNECT KE DB
       },
     ]
   },
@@ -147,20 +139,21 @@ export const menuItems: MenuItem[] = [
     id: "perizinan",
     title: "Perizinan",
     description: "Layanan perizinan",
-    icon: <FileCheck className="h-12 w-12" />,
+    icon: "FileCheck",
     submenu: [
       { 
         id: "sp-sop", 
         title: "SP dan SOP", 
         description: "Standar Pelayanan & SOP", 
-        icon: <Shield className="h-10 w-10" />,
-        hasDocuments: true
+        icon: "Shield",
+        hasDocuments: true,
+        categorySlug: "sop" // <--- CONNECT KE DB
       },
       { 
         id: "layanan-sektor", 
         title: "Jenis Pelayanan / Layanan Sektor", 
         description: "Perizinan berdasarkan sektor", 
-        icon: <ClipboardList className="h-10 w-10" />,
+        icon: "ClipboardList",
         hasSectors: true
       },
     ]
@@ -169,20 +162,21 @@ export const menuItems: MenuItem[] = [
     id: "tata-ruang",
     title: "Informasi Tata Ruang",
     description: "RDTR dan peta tata ruang",
-    icon: <Map className="h-12 w-12" />,
+    icon: "Map",
     submenu: [
       { 
         id: "rdtr-dokumen", 
         title: "Dokumen RDTR", 
         description: "Rencana Detail Tata Ruang", 
-        icon: <FileText className="h-10 w-10" />,
-        hasDocuments: true
+        icon: "FileText",
+        hasDocuments: true,
+        categorySlug: "rdtr-dokumen" // <--- CONNECT KE DB
       },
       { 
         id: "rdtr-interaktif", 
         title: "RDTR Interaktif", 
         description: "Website peta interaktif", 
-        icon: <Globe className="h-10 w-10" />,
+        icon: "Globe",
         hasContent: true,
         content: {
           type: "text",
@@ -194,7 +188,7 @@ export const menuItems: MenuItem[] = [
         id: "peta-rtrw-qr", 
         title: "Peta RTRW", 
         description: "Website peta tata ruang", 
-        icon: <Globe className="h-10 w-10" />,
+        icon: "Globe",
         hasContent: true,
         content: {
           type: "text",
@@ -208,13 +202,13 @@ export const menuItems: MenuItem[] = [
     id: "mpp",
     title: "MPP / Informasi Publik",
     description: "Mal Pelayanan Publik",
-    icon: <Landmark className="h-12 w-12" />,
+    icon: "Landmark",
     submenu: [
       { 
         id: "layanan-mpp", 
         title: "Daftar Layanan MPP", 
         description: "Layanan yang tersedia", 
-        icon: <Building2 className="h-10 w-10" />,
+        icon: "Building2",
         hasContent: true,
         content: {
           type: "points",
@@ -230,18 +224,27 @@ export const menuItems: MenuItem[] = [
           ]
         }
       },
+      {
+        id: "regulasi-mpp",
+        title: "Regulasi dan Dasar Hukum",
+        description: "Dokumen regulasi",
+        icon: "Scale",
+        hasDocuments: true,
+        categorySlug: "regulasi-mpp" // <--- CONNECT KE DB
+      },
       { 
         id: "persyaratan-umum", 
         title: "Persyaratan Umum", 
         description: "Dokumen persyaratan", 
-        icon: <ScrollText className="h-10 w-10" />,
-        hasDocuments: true
+        icon: "ScrollText",
+        hasDocuments: true,
+        categorySlug: "persyaratan-umum" // <--- CONNECT KE DB
       },
       { 
         id: "alur-pelayanan", 
         title: "Alur Pelayanan", 
         description: "Tahapan proses layanan", 
-        icon: <BookOpen className="h-10 w-10" />,
+        icon: "BookOpen",
         hasContent: true,
         content: {
           type: "points",
@@ -260,7 +263,7 @@ export const menuItems: MenuItem[] = [
         id: "kontak-lokasi", 
         title: "Informasi Kontak & Lokasi", 
         description: "Alamat dan kontak MPP", 
-        icon: <Phone className="h-10 w-10" />,
+        icon: "Phone",
         hasContent: true,
         content: {
           type: "profile",
@@ -279,7 +282,7 @@ export const menuItems: MenuItem[] = [
     id: "peta-potensi",
     title: "SIPETA LOBAR",
     description: "Scan QR untuk melihat peta",
-    icon: <QrCode className="h-12 w-12" />,
+    icon: "QrCode",
     isQrCode: true,
     qrUrl: "https://potensi.lombokbaratkab.go.id",
     qrDescription: "Sistem Informasi Pemetaan Lokasi dan Rekomendasi Usaha Lombok Barat. Scan QR Code untuk mengakses peta interaktif di smartphone Anda."
@@ -287,117 +290,25 @@ export const menuItems: MenuItem[] = [
 ]
 
 export const sectors: SectorItem[] = [
-  { id: "industri-perdagangan", title: "Industri dan Perdagangan", description: "Perizinan sektor industri", icon: <Factory className="h-10 w-10" /> },
-  { id: "kesehatan", title: "Kesehatan", description: "Perizinan sektor kesehatan", icon: <HeartPulse className="h-10 w-10" /> },
-  { id: "lingkungan", title: "Lingkungan", description: "Perizinan lingkungan hidup", icon: <Leaf className="h-10 w-10" /> },
-  { id: "putr", title: "PUTR", description: "Pekerjaan Umum & Tata Ruang", icon: <Building className="h-10 w-10" /> },
-  { id: "perhubungan", title: "Perhubungan", description: "Perizinan transportasi", icon: <Bus className="h-10 w-10" /> },
-  { id: "pariwisata", title: "Pariwisata", description: "Perizinan pariwisata", icon: <Palmtree className="h-10 w-10" /> },
-  { id: "koperasi", title: "Koperasi", description: "Perizinan koperasi & UKM", icon: <Users2 className="h-10 w-10" /> },
-  { id: "tenaga-kerja", title: "Tenaga Kerja", description: "Perizinan ketenagakerjaan", icon: <HardHat className="h-10 w-10" /> },
-  { id: "kelautan-perikanan", title: "Kelautan dan Perikanan", description: "Perizinan kelautan", icon: <Fish className="h-10 w-10" /> },
-  { id: "pertanian-pangan", title: "Pertanian dan Pangan", description: "Perizinan pertanian", icon: <Wheat className="h-10 w-10" /> },
-  { id: "pendidikan-kebudayaan", title: "Pendidikan dan Kebudayaan", description: "Perizinan pendidikan", icon: <GraduationCap className="h-10 w-10" /> },
-  { id: "bpjs-ketenagakerjaan", title: "BPJS Ketenagakerjaan", description: "Layanan BPJS TK", icon: <BadgeCheck className="h-10 w-10" /> },
+  { id: "industri-perdagangan", title: "Industri dan Perdagangan", description: "Perizinan sektor industri", icon: "Factory" },
+  { id: "kesehatan", title: "Kesehatan", description: "Perizinan sektor kesehatan", icon: "HeartPulse" },
+  { id: "lingkungan", title: "Lingkungan", description: "Perizinan lingkungan hidup", icon: "Leaf" },
+  { id: "putr", title: "PUTR", description: "Pekerjaan Umum & Tata Ruang", icon: "Building" },
+  { id: "perhubungan", title: "Perhubungan", description: "Perizinan transportasi", icon: "Bus" },
+  { id: "pariwisata", title: "Pariwisata", description: "Perizinan pariwisata", icon: "Palmtree" },
+  { id: "koperasi", title: "Koperasi", description: "Perizinan koperasi & UKM", icon: "Users2" },
+  { id: "tenaga-kerja", title: "Tenaga Kerja", description: "Perizinan ketenagakerjaan", icon: "HardHat" },
+  { id: "kelautan-perikanan", title: "Kelautan dan Perikanan", description: "Perizinan kelautan", icon: "Fish" },
+  { id: "pertanian-pangan", title: "Pertanian dan Pangan", description: "Perizinan pertanian", icon: "Wheat" },
+  { id: "pendidikan-kebudayaan", title: "Pendidikan dan Kebudayaan", description: "Perizinan pendidikan", icon: "GraduationCap" },
+  { id: "bpjs-ketenagakerjaan", title: "BPJS Ketenagakerjaan", description: "Layanan BPJS TK", icon: "BadgeCheck" },
 ]
 
-export const documents: Record<string, DocumentItem[]> = {
-  "struktur": [
-    { id: "struktur-org", title: "Struktur Organisasi DPMPTSP", description: "Bagan struktur", pdfUrl: "/docs/struktur.pdf" },
-  ],
-  "ipro": [
-    { id: "ipro-giligede", title: "IPRO Gili Gede 2022", description: "Investment Project Ready to Offer", pdfUrl: "/docs/ipro.pdf" },
-    { id: "ipro-pariwisata", title: "IPRO Sektor Pariwisata", description: "Proyek investasi pariwisata", pdfUrl: "/docs/ipro-pariwisata.pdf" },
-    { id: "ipro-industri", title: "IPRO Sektor Industri", description: "Proyek investasi industri", pdfUrl: "/docs/ipro-industri.pdf" },
-    { id: "ipro-pertanian", title: "IPRO Sektor Pertanian", description: "Proyek investasi pertanian", pdfUrl: "/docs/ipro-pertanian.pdf" },
-  ],
-  "lkpm": [
-    { id: "panduan-lkpm", title: "Panduan Pengisian LKPM", description: "Tata cara pengisian", pdfUrl: "/docs/LKPM.pdf" }
-    // { id: "format-lkpm", title: "Format LKPM", description: "Template laporan", pdfUrl: "/docs/format-lkpm.pdf" },
-    // { id: "regulasi-lkpm", title: "Regulasi LKPM", description: "Peraturan terkait", pdfUrl: "/docs/regulasi-lkpm.pdf" },
-  ],
-  "sp-sop": [
-    { id: "sop-sicantik", title: "SOP SiCANTIK", description: "SOP Sicantik", pdfUrl: "/docs/SOP-SiCANTIK.pdf" },
-    { id: "sop-pbg", title: "SOP PBG", description: "SOP PBG", pdfUrl: "/docs/SOP-PBG-DPMPTSP.pdf" },
-    { id: "sp-putr", title: "SOP PUTR", description: "SOP PUTR", pdfUrl: "/docs/SOP-putr.pdf" },
-    { id: "sp-sop-bappenda", title: "SP dan SOP Bappenda", description: "Alur SOP Bappenda", pdfUrl: "/docs/SP-DAN-SOP-alur-bapenda.pdf" },
-    { id: "sp-sop-dikes", title: "SP dan SOP Dikes", description: "Alur SOP Dikes", pdfUrl: "/docs/SP-DAN-SOP-alur-dikes.pdf" },
-    { id: "sp-sop-dishub", title: "SP dan SOP Dishub", description: "Alur SOP Dishub", pdfUrl: "/docs/SP-DAN-SOP-alur-dishub.pdf" },
-    { id: "sp-sop-diskominfotik", title: "SP dan SOP Diskominfotik", description: "Alur SOP Diskominfotik", pdfUrl: "/docs/SP-DAN-SOP-alur-diskominfotik.pdf" },
-    { id: "sp-sop-diskop", title: "SP dan SOP Diskop", description: "Alur SOP Diskop", pdfUrl: "/docs/SP-DAN-SOP-alur-diskop.pdf" },
-    { id: "sp-sop-dislutkan", title: "SP dan SOP Dislutkan", description: "Alur SOP Dislutkan", pdfUrl: "/docs/SP-DAN-SOP-alur-dislutkan.pdf" },
-    { id: "sp-sop-disnaker", title: "SP dan SOP Disnaker", description: "Alur SOP Disnaker", pdfUrl: "/docs/SP-DAN-SOP-alur-disnaker.pdf" },
-    { id: "sp-sop-disperindag", title: "SP dan SOP Disperindag", description: "Alur SOP Disperindag", pdfUrl: "/docs/SP-DAN-SOP-alur-disperindag.pdf" },
-    { id: "sp-sop-lingkunganHidup", title: "SP dan SOP Lingkungan Hidup", description: "Alur SOP Lingkungan Hidup", pdfUrl: "/docs/SP-DAN-SOP-alur-LH.pdf" },
-    { id: "sp-sop-pangan", title: "SP dan SOP Dikpangan", description: "Alur SOP Dikpangan", pdfUrl: "/docs/SP-DAN-SOP-alur-pangan.pdf" },
-    { id: "sp-sop-perkim", title: "SP dan SOP Perkim", description: "Alur SOP Perkim", pdfUrl: "/docs/SP-DAN-SOP-alur-perkim.pdf" },
-    { id: "sp-sop-pertanian", title: "SP dan SOP Pertanian", description: "Alur SOP Pertanian", pdfUrl: "/docs/SP-DAN-SOP-alur-pertanian.pdf" },
-    { id: "sp-sop-dpmptsp", title: "SP dan SOP DPMPTSP", description: "SOP DPMPTSP", pdfUrl: "/docs/SP-DAN-SOP-DPMPTSP.pdf" },
-  ],
-  "rdtr-dokumen": [
-    { id: "rdtr-gerung", title: "RDTR Kawasan Gerung", description: "Rencana detail", pdfUrl: "/docs/rdtr-gerung.pdf" },
-    { id: "rdtr-sekotong", title: "RDTR Kawasan Lembar", description: "Rencana detail", pdfUrl: "/docs/rdtr-lembar.pdf" },
-    { id: "rdtr-senggigi", title: "RDTR Kawasan Senggigi", description: "Rencana detail", pdfUrl: "/docs/RDTR-senggigi-batulayar.pdf" },
-    // { id: "peta-rtrw", title: "Peta RTRW Lombok Barat", description: "Peta tata ruang", pdfUrl: "/docs/peta-rtrw.pdf" },
-  ],
-  "persyaratan-umum": [
-    { id: "syarat-umum", title: "Persyaratan Umum Perizinan", description: "Dokumen wajib", pdfUrl: "/docs/syarat-umum.pdf" },
-    { id: "syarat-badan-usaha", title: "Persyaratan Badan Usaha", description: "Syarat perusahaan", pdfUrl: "/docs/syarat-badan-usaha.pdf" },
-    { id: "syarat-perorangan", title: "Persyaratan Perorangan", description: "Syarat individu", pdfUrl: "/docs/syarat-perorangan.pdf" },
-  ],
-  // Sector documents
-  "industri-perdagangan": [
-    { id: "izin-industri", title: "Izin Usaha Industri", description: "IUI/SIUP", pdfUrl: "/docs/izin-industri.pdf" },
-    { id: "tanda-daftar", title: "Tanda Daftar Perusahaan", description: "TDP", pdfUrl: "/docs/tdp.pdf" },
-  ],
-  "kesehatan": [
-    { id: "izin-klinik", title: "Izin Operasional Klinik", description: "Persyaratan klinik", pdfUrl: "/docs/izin-klinik.pdf" },
-    { id: "izin-apotek", title: "Izin Apotek", description: "Persyaratan apotek", pdfUrl: "/docs/izin-apotek.pdf" },
-    { id: "izin-praktek", title: "Surat Izin Praktek", description: "SIP tenaga kesehatan", pdfUrl: "/docs/sip.pdf" },
-  ],
-  "lingkungan": [
-    { id: "izin-lingkungan", title: "Izin Lingkungan", description: "AMDAL/UKL-UPL", pdfUrl: "/docs/izin-lingkungan.pdf" },
-    { id: "izin-limbah", title: "Izin Pengelolaan Limbah", description: "Izin B3", pdfUrl: "/docs/izin-limbah.pdf" },
-  ],
-  "putr": [
-    { id: "imb", title: "Izin Mendirikan Bangunan", description: "IMB/PBG", pdfUrl: "/docs/imb.pdf" },
-    { id: "slf", title: "Sertifikat Laik Fungsi", description: "SLF bangunan", pdfUrl: "/docs/slf.pdf" },
-  ],
-  "perhubungan": [
-    { id: "izin-trayek", title: "Izin Trayek", description: "Angkutan umum", pdfUrl: "/docs/izin-trayek.pdf" },
-    { id: "izin-parkir", title: "Izin Pengelolaan Parkir", description: "Perparkiran", pdfUrl: "/docs/izin-parkir.pdf" },
-  ],
-  "pariwisata": [
-    { id: "tdup", title: "TDUP", description: "Tanda Daftar Usaha Pariwisata", pdfUrl: "/docs/tdup.pdf" },
-    { id: "izin-hotel", title: "Izin Usaha Hotel", description: "Akomodasi", pdfUrl: "/docs/izin-hotel.pdf" },
-    { id: "izin-restoran", title: "Izin Usaha Restoran", description: "Rumah makan", pdfUrl: "/docs/izin-restoran.pdf" },
-  ],
-  "koperasi": [
-    { id: "izin-koperasi", title: "Pengesahan Akta Koperasi", description: "Badan hukum", pdfUrl: "/docs/izin-koperasi.pdf" },
-    { id: "izin-ukm", title: "Izin Usaha Mikro Kecil", description: "IUMK", pdfUrl: "/docs/iumk.pdf" },
-  ],
-  "tenaga-kerja": [
-    { id: "izin-lptks", title: "Izin LPTKS", description: "Lembaga pelatihan", pdfUrl: "/docs/izin-lptks.pdf" },
-    { id: "ak1", title: "Kartu AK1", description: "Pencari kerja", pdfUrl: "/docs/ak1.pdf" },
-  ],
-  "kelautan-perikanan": [
-    { id: "siup-perikanan", title: "SIUP Perikanan", description: "Usaha perikanan", pdfUrl: "/docs/siup-perikanan.pdf" },
-    { id: "sipi", title: "SIPI", description: "Izin penangkapan ikan", pdfUrl: "/docs/sipi.pdf" },
-  ],
-  "pertanian-pangan": [
-    { id: "izin-usaha-pertanian", title: "Izin Usaha Pertanian", description: "Budidaya tanaman", pdfUrl: "/docs/izin-pertanian.pdf" },
-    { id: "izin-pangan", title: "Izin Edar Pangan", description: "Produk pangan", pdfUrl: "/docs/izin-pangan.pdf" },
-  ],
-  "pendidikan-kebudayaan": [
-    { id: "izin-sekolah", title: "Izin Operasional Sekolah", description: "Lembaga pendidikan", pdfUrl: "/docs/izin-sekolah.pdf" },
-    { id: "izin-kursus", title: "Izin Lembaga Kursus", description: "LPK", pdfUrl: "/docs/izin-kursus.pdf" },
-  ],
-  "bpjs-ketenagakerjaan": [
-    { id: "panduan-bpjs", title: "Panduan Pendaftaran BPJS TK", description: "Tata cara", pdfUrl: "/docs/panduan-bpjs.pdf" },
-    { id: "form-bpjs", title: "Formulir BPJS TK", description: "Form pendaftaran", pdfUrl: "/docs/form-bpjs.pdf" },
-  ],
-}
+// --- DATA DOCUMENTS KITA KOSONGKAN ---
+// Karena sekarang data ini diambil LIVE dari Database via Server Action.
+export const documents: Record<string, DocumentItem[]> = {}
 
+// --- HELPER FUNCTIONS ---
 export function getMenuById(id: string): MenuItem | undefined {
   return menuItems.find(item => item.id === id)
 }
@@ -407,14 +318,15 @@ export function getSubmenuById(menuId: string, submenuId: string): SubMenuItem |
   return menu?.submenu?.find(item => item.id === submenuId)
 }
 
-export function getDocuments(categoryId: string): DocumentItem[] {
-  return documents[categoryId] || []
-}
-
 export function getSectors(): SectorItem[] {
   return sectors
 }
 
 export function getSectorById(sectorId: string): SectorItem | undefined {
   return sectors.find(s => s.id === sectorId)
+}
+
+// Fallback untuk kode lama, return kosong agar tidak error
+export function getDocuments(categoryId: string): DocumentItem[] {
+  return []
 }

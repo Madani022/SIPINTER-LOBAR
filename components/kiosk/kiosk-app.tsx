@@ -1,20 +1,19 @@
 "use client"
 
-import dynamic from "next/dynamic" // 1. Import dynamic
+import dynamic from "next/dynamic"
 import { KioskProvider, useKiosk } from "./kiosk-provider"
 import { HomeScreen } from "./home-screen"
-import { SubmenuScreen } from "./submenu-screen"
+import { SubmenuScreen } from "./submenu-screen" // Pastikan import ini ada
 import { ContentScreen } from "./content-screen"
 import { DocumentsScreen } from "./documents-screen"
 import { SectorsScreen } from "./sectors-screen"
 import { SectorDetailScreen } from "./sector-detail-screen"
-// import { PDFViewerScreen } from "./pdf-viewer-screen"  <-- 2. HAPUS IMPORT INI
 import { VideoPlayerScreen } from "./video-player-screen"
 import { QrPageScreen } from "./qr-page-screen"
 import { AdminScreen } from "./admin-screen"
 import { Loader2 } from "lucide-react"
 
-// 3. GANTI DENGAN DYNAMIC IMPORT (SSR: FALSE)
+// Dynamic import for PDF Viewer to avoid SSR issues
 const PDFViewerScreen = dynamic(
   () => import("./pdf-viewer-screen").then((mod) => mod.PDFViewerScreen),
   { 
@@ -36,6 +35,7 @@ function KioskScreens() {
   switch (currentScreen.type) {
     case "home":
       return <HomeScreen />
+      
     case "submenu":
       return (
         <SubmenuScreen
@@ -43,6 +43,7 @@ function KioskScreens() {
           menuTitle={currentScreen.menuTitle}
         />
       )
+      
     case "content":
       return (
         <ContentScreen
@@ -51,13 +52,15 @@ function KioskScreens() {
           title={currentScreen.title}
         />
       )
+      
     case "documents":
       return (
         <DocumentsScreen
-          categoryId={currentScreen.categoryId}
+          categorySlug={currentScreen.categoryId} 
           categoryTitle={currentScreen.categoryTitle}
         />
       )
+      
     case "sectors":
       return (
         <SectorsScreen
@@ -65,6 +68,7 @@ function KioskScreens() {
           menuTitle={currentScreen.menuTitle}
         />
       )
+      
     case "sector-detail":
       return (
         <SectorDetailScreen
@@ -72,8 +76,10 @@ function KioskScreens() {
           sectorTitle={currentScreen.sectorTitle}
         />
       )
+      
     case "pdf-viewer":
       return <PDFViewerScreen document={currentScreen.document} />
+      
     case "video-player":
       return (
         <VideoPlayerScreen
@@ -81,6 +87,7 @@ function KioskScreens() {
           videoUrl={currentScreen.videoUrl}
         />
       )
+      
     case "qr-page":
       return (
         <QrPageScreen
@@ -89,8 +96,10 @@ function KioskScreens() {
           description={currentScreen.description}
         />
       )
+      
     case "admin":
       return <AdminScreen />
+      
     default:
       return <HomeScreen />
   }

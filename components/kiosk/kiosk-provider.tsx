@@ -4,11 +4,21 @@ import { createContext, useContext, useState, useCallback, useEffect, useRef, ty
 import { trackMenuClick, trackDocumentView } from "@/lib/analytics-store"
 import { cacheDataForOffline } from "@/lib/offline-store"
 
+// =========================================
+// 1. UPDATE DEFINISI VIEW / SCREEN
+// =========================================
 export type Screen = 
   | { type: "home" }
   | { type: "submenu"; menuId: string; menuTitle: string }
   | { type: "content"; menuId: string; submenuId: string; title: string }
-  | { type: "documents"; categoryId: string; categoryTitle: string; sectorId?: string }
+  | { 
+      type: "documents"; 
+      categoryTitle: string; 
+      // Update: categoryId jadi optional, tambah categorySlug
+      categoryId?: string; 
+      categorySlug?: string; 
+      sectorId?: string 
+    }
   | { type: "sectors"; menuId: string; menuTitle: string }
   | { type: "sector-detail"; sectorId: string; sectorTitle: string }
   | { type: "pdf-viewer"; document: DocumentItem }
@@ -16,11 +26,15 @@ export type Screen =
   | { type: "qr-page"; title: string; url: string; description: string }
   | { type: "admin" }
 
+// =========================================
+// 2. UPDATE DEFINISI ITEM MENU
+// =========================================
+
 export interface MenuItem {
   id: string
   title: string
   description: string
-  icon: ReactNode
+  icon: any // Ubah ke any agar bisa terima Component atau String nama icon
   submenu?: SubMenuItem[]
   isQrCode?: boolean
   qrUrl?: string
@@ -31,8 +45,10 @@ export interface SubMenuItem {
   id: string
   title: string
   description: string
-  icon: ReactNode
+  icon: any // Ubah ke any agar bisa terima Component atau String nama icon
   hasDocuments?: boolean
+  // Update: Tambahkan ini agar connect ke DB
+  categorySlug?: string 
   hasContent?: boolean
   hasSectors?: boolean
   hasVideo?: boolean
@@ -40,20 +56,20 @@ export interface SubMenuItem {
   content?: ContentData
 }
 
-// --- UPDATE BAGIAN INI ---
+// =========================================
+// 3. UPDATE DEFINISI KONTEN & DOKUMEN
+// =========================================
+
 export interface ContentData {
-  // Tambahkan "image" ke dalam type
   type: "text" | "points" | "profile" | "officials" | "image"
   title?: string
   text?: string
   points?: string[]
   officials?: OfficialData[]
   contactInfo?: ContactInfo
-  // Tambahkan properti untuk gambar
   imageUrl?: string
   alt?: string
 }
-// -------------------------
 
 export interface OfficialData {
   name: string
@@ -72,21 +88,27 @@ export interface ContactInfo {
 export interface DocumentItem {
   id: string
   title: string
-  description: string
-  pdfUrl: string
+  description?: string
+  // Update: Tambahkan url untuk kompatibilitas DB
+  url?: string 
+  pdfUrl?: string // Legacy support
   driveUrl?: string
   thumbnail?: string
-  category?: "sp" | "sop" | "formulir" | "pedoman" | "surat-edaran" | "lainnya"
+  category?: string
+  type?: "pdf" | "link"
 }
 
 export interface SectorItem {
   id: string
   title: string
   description: string
-  icon: ReactNode
+  icon: any
 }
 
-// Idle timeout constants
+// =========================================
+// 4. LOGIC PROVIDER (TIDAK BERUBAH BANYAK)
+// =========================================
+
 const IDLE_TIMEOUT_MENU = 90 * 1000 // 90 seconds
 const IDLE_TIMEOUT_DOCUMENT = 180 * 1000 // 180 seconds
 

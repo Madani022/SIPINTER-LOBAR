@@ -1,0 +1,145 @@
+// Prisma Schema untuk DPMPTSP Kiosk System
+// Database: MySQL
+// Prisma 6/7
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ===========================================
+// AUTHENTICATION (Ditambahkan untuk Seed)
+// ===========================================
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  email        String   @unique
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ===========================================
+// DOCUMENT MANAGEMENT
+// ===========================================
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  slug        String     @unique
+  description String?    @db.Text
+  icon        String?
+  order       Int        @default(0)
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  documents   Document[]
+}
+
+model Document {
+  id            String   @id @default(cuid())
+  title         String
+  slug          String   @unique
+  description   String?  @db.Text
+  categoryId    String
+  category      Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  filePath      String   @db.Text
+  fileSize      Int
+  qrCode        String?  @db.Text
+  downloadUrl   String?  @db.Text
+  version       String   @default("1.0")
+  isActive      Boolean  @default(true)
+  isFeatured    Boolean  @default(false)
+  viewCount     Int      @default(0)
+  downloadCount Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+   
+  // Relations
+  stats         DocumentStat[]
+   
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([isFeatured])
+}
+
+// ===========================================
+// ANALYTICS & STATISTICS
+// ===========================================
+
+model DocumentStat {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  action     String   // "view", "download", "qr_scan"
+  ipAddress  String?
+  userAgent  String?  @db.Text
+  sessionId  String?
+  createdAt  DateTime @default(now())
+   
+  @@index([documentId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model DailyStat {
+  id             String   @id @default(cuid())
+  date           DateTime @unique @db.Date
+  totalViews     Int      @default(0)
+  totalDownloads Int      @default(0)
+  totalQrScans   Int      @default(0)
+  uniqueVisitors Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+   
+  @@index([date])
+}
+
+model KioskSession {
+  id              String    @id @default(cuid())
+  sessionToken    String    @unique
+  startedAt       DateTime  @default(now())
+  endedAt         DateTime?
+  pageViews       Int       @default(0)
+  documentsViewed Int       @default(0)
+  lastActivity    DateTime  @default(now())
+   
+  @@index([startedAt])
+}
+
+// ===========================================
+// SYNC MANAGEMENT
+// ===========================================
+
+model SyncLog {
+  id           String    @id @default(cuid())
+  syncType     String    // "full", "incremental", "documents", "stats"
+  status       String    // "pending", "in_progress", "completed", "failed"
+  recordsSync  Int       @default(0)
+  errorMessage String?   @db.Text
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+   
+  @@index([status])
+  @@index([startedAt])
+}
+
+// ===========================================
+// SYSTEM SETTINGS
+// ===========================================
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  type      String   @default("string") // "string", "number", "boolean", "json"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

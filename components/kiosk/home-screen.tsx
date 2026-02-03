@@ -5,6 +5,8 @@ import { menuItems } from "@/lib/kiosk-data"
 import { Card } from "@/components/ui/card"
 import { StatusIndicator } from "./status-indicator"
 import Image from "next/image"
+// 1. IMPORT HELPER ICON (Pastikan path-nya benar, sesuaikan jika ada di folder lain)
+import { renderIcon } from "../ui/icon-map" 
 
 export function HomeScreen() {
   const { navigateTo, trackMenu } = useKiosk()
@@ -23,8 +25,6 @@ export function HomeScreen() {
       navigateTo({ type: "submenu", menuId: item.id, menuTitle: item.title })
     }
   }
-
-  // HAPUS: const handleAdminClick ... (Sudah tidak dipakai)
 
   return (
     <div className="flex h-full flex-col">
@@ -60,8 +60,6 @@ export function HomeScreen() {
           <div className="flex items-center gap-2 lg:gap-4">
             <StatusIndicator />
             
-            {/* HAPUS: Tombol Settings/Admin Button di sini */}
-            
             <div className="hidden rounded-2xl bg-card/10 px-4 py-3 text-center backdrop-blur-sm lg:block lg:px-6 lg:py-4">
               <p className="text-xs font-medium opacity-80 lg:text-sm">Sentuh menu untuk memulai</p>
               <p className="text-lg font-bold lg:text-2xl">Selamat Datang</p>
@@ -91,7 +89,8 @@ export function HomeScreen() {
                 }`}
               >
                 <div className="[&>svg]:h-8 [&>svg]:w-8 lg:[&>svg]:h-12 lg:[&>svg]:w-12">
-                  {item.icon}
+                  {/* 2. GUNAKAN RENDER ICON DISINI */}
+                  {renderIcon(item.icon)} 
                 </div>
               </div>
               <div className="text-center">

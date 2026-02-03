@@ -2,108 +2,136 @@
 
 import { useState } from "react"
 import { useKiosk } from "./kiosk-provider"
-import { getSectors } from "@/lib/kiosk-data"
+import { NavigationBar } from "./navigation-bar"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { NavigationBar } from "./navigation-bar"
+import { cn } from "@/lib/utils"
+import { sectors } from "@/lib/kiosk-data" 
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import * as LucideIcons from "lucide-react"
+
+// --- HELPER DYNAMIC ICON ---
+const DynamicIcon = ({ name, className }: { name: string | any; className?: string }) => {
+  if (!name) return <LucideIcons.HelpCircle className={className} />
+  if (typeof name === 'string') {
+     const IconComponent = (LucideIcons as any)[name]
+     return IconComponent ? <IconComponent className={className} /> : <LucideIcons.HelpCircle className={className} />
+  }
+  return name
+}
 
 interface SectorsScreenProps {
   menuId: string
   menuTitle: string
 }
 
-const ITEMS_PER_PAGE = 8
-
 export function SectorsScreen({ menuId, menuTitle }: SectorsScreenProps) {
-  const { navigateTo, trackMenu } = useKiosk()
-  const [currentPage, setCurrentPage] = useState(0)
+  const { navigateTo } = useKiosk()
+  
+  // Pagination Logic
+  const ITEMS_PER_PAGE = 8 
+  const [currentPage, setCurrentPage] = useState(1)
+  
+  const totalPages = Math.ceil(sectors.length / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const currentSectors = sectors.slice(startIndex, startIndex + ITEMS_PER_PAGE)
 
-  const allSectors = getSectors()
-  const totalPages = Math.ceil(allSectors.length / ITEMS_PER_PAGE)
-  const sectors = allSectors.slice(
-    currentPage * ITEMS_PER_PAGE,
-    (currentPage + 1) * ITEMS_PER_PAGE
-  )
+  const handleNext = () => {
+    if (currentPage < totalPages) setCurrentPage(prev => prev + 1)
+  }
 
-  const handleSectorClick = (sectorId: string, sectorTitle: string) => {
-    trackMenu(sectorId, sectorTitle)
-    navigateTo({ type: "sector-detail", sectorId, sectorTitle })
+  const handlePrev = () => {
+    if (currentPage > 1) setCurrentPage(prev => prev - 1)
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <NavigationBar title={menuTitle} showBack />
+    <div className="flex h-full flex-col bg-slate-50">
+      {/* Navbar */}
+      <NavigationBar title={menuTitle} showBack={true} />
 
-      {/* Sectors Grid */}
-      <main className="flex-1 bg-background p-3 lg:p-6">
-        <div className="grid h-full grid-cols-4 grid-rows-2 gap-3 lg:gap-5">
-          {sectors.map((sector) => (
+      {/* Content Area */}
+      <div className="flex-1 overflow-hidden p-8 flex flex-col">
+        
+        {/* Grid Sektor */}
+        <div className="grid flex-1 gap-6 grid-cols-4 grid-rows-2 mb-4">
+          {currentSectors.map((sector) => (
             <Card
               key={sector.id}
-              onClick={() => handleSectorClick(sector.id, sector.title)}
-              className="group flex cursor-pointer flex-col items-center justify-center gap-2 p-3 shadow-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] bg-card text-card-foreground hover:bg-primary hover:text-primary-foreground lg:gap-3 lg:p-6"
+              onClick={() => navigateTo({ 
+                type: "sector-detail", 
+                sectorId: sector.id, 
+                sectorTitle: sector.title 
+              })}
+              className={cn(
+                "group relative flex cursor-pointer flex-col items-center justify-center p-6 text-center",
+                "bg-white border-none shadow-sm transition-all hover:translate-y-[-4px] hover:shadow-md",
+                "h-full w-full rounded-2xl"
+              )}
             >
-              <div className="rounded-lg bg-primary/10 p-3 transition-colors group-hover:bg-card/20 lg:rounded-xl lg:p-4">
-                <div className="[&>svg]:h-6 [&>svg]:w-6 lg:[&>svg]:h-10 lg:[&>svg]:w-10">
-                  {sector.icon}
-                </div>
+              {/* ICON CONTAINER */}
+              <div className="mb-4 flex h-24 w-24 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 transition-colors group-hover:bg-[#0F4C81] group-hover:text-white">
+                <DynamicIcon 
+                  name={sector.icon} 
+                  className="h-10 w-10" 
+                />
               </div>
-              <div className="text-center">
-                <h3 className="text-sm font-bold leading-tight lg:text-lg">{sector.title}</h3>
-                <p className="mt-0.5 text-xs text-muted-foreground group-hover:text-primary-foreground/80 lg:mt-1 lg:text-sm">
+
+              {/* TEXT CONTENT */}
+              <div className="w-full px-2">
+                <h3 className="text-lg font-bold leading-tight text-slate-800 lg:text-xl">
+                  {sector.title}
+                </h3>
+                <p className="mt-1 line-clamp-2 text-sm text-slate-400">
                   {sector.description}
                 </p>
               </div>
             </Card>
           ))}
         </div>
-      </main>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <footer className="border-t border-border bg-card px-4 py-3 lg:px-8 lg:py-4">
-          <div className="flex items-center justify-center gap-4 lg:gap-6">
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-              disabled={currentPage === 0}
-              className="h-10 px-4 text-sm font-semibold lg:h-14 lg:px-8 lg:text-lg"
-            >
-              <ChevronLeft className="mr-1 h-4 w-4 lg:mr-2 lg:h-6 lg:w-6" />
-              Sebelumnya
-            </Button>
-            <div className="flex items-center gap-2 lg:gap-3">
-              {Array.from({ length: totalPages }).map((_, i) => (
-                <button
-                  type="button"
-                  key={i}
-                  onClick={() => setCurrentPage(i)}
-                  className={`h-3 w-3 rounded-full transition-all lg:h-4 lg:w-4 ${
-                    i === currentPage
-                      ? "scale-125 bg-primary"
-                      : "bg-muted hover:bg-muted-foreground/50"
-                  }`}
-                />
-              ))}
-            </div>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
-              disabled={currentPage === totalPages - 1}
-              className="h-10 px-4 text-sm font-semibold lg:h-14 lg:px-8 lg:text-lg"
-            >
-              Selanjutnya
-              <ChevronRight className="ml-1 h-4 w-4 lg:ml-2 lg:h-6 lg:w-6" />
-            </Button>
-          </div>
-          <p className="mt-2 text-center text-xs text-muted-foreground lg:mt-3 lg:text-sm">
-            Halaman {currentPage + 1} dari {totalPages} ({allSectors.length} sektor)
-          </p>
-        </footer>
-      )}
+        {/* Footer / Pagination Control */}
+        <div className="shrink-0 flex items-center justify-center gap-4 py-2">
+           <Button
+             variant="outline"
+             onClick={handlePrev}
+             disabled={currentPage === 1}
+             // PERUBAHAN DISINI: font-bold dan text-lg
+             className="h-14 px-8 gap-3 rounded-xl border-2 text-lg font-bold text-slate-700 hover:text-[#0F4C81] hover:border-[#0F4C81]"
+           >
+             <ChevronLeft className="h-6 w-6 stroke-[3]" /> {/* Icon dipertebal */}
+             Sebelumnya
+           </Button>
+
+           {/* Dots Indicator */}
+           <div className="flex gap-3 mx-6">
+             {Array.from({ length: totalPages }).map((_, i) => (
+               <div 
+                 key={i}
+                 className={cn(
+                   "h-4 w-4 rounded-full transition-colors",
+                   currentPage === i + 1 ? "bg-[#0F4C81]" : "bg-slate-300"
+                 )}
+               />
+             ))}
+           </div>
+
+           <Button
+             variant="outline"
+             onClick={handleNext}
+             disabled={currentPage === totalPages}
+             // PERUBAHAN DISINI: font-bold dan text-lg
+             className="h-14 px-8 gap-3 rounded-xl border-2 text-lg font-bold text-slate-700 hover:text-[#0F4C81] hover:border-[#0F4C81]"
+           >
+             Selanjutnya
+             <ChevronRight className="h-6 w-6 stroke-[3]" /> {/* Icon dipertebal */}
+           </Button>
+        </div>
+        
+        <div className="text-center mt-3 text-slate-500 font-medium text-base">
+           Halaman {currentPage} dari {totalPages}
+        </div>
+
+      </div>
     </div>
   )
 }

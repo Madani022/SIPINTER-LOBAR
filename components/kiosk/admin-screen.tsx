@@ -1,310 +1,548 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { 
-  LayoutDashboard, FileText, Settings, Download, 
+  LayoutDashboard, FileText, Settings, 
   Upload, Trash2, Edit, Wifi, WifiOff, RefreshCw, 
-  Search, Filter, CheckCircle2, AlertCircle, PieChart, BarChart
+  Search, MonitorPlay, LogOut, ChevronRight,
+  MousePointerClick, Star, QrCode, Loader2
 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { NavigationBar } from "./navigation-bar"
-import { Badge } from "@/components/ui/badge" // Asumsi ada komponen Badge, jika tidak bisa pakai span biasa
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, 
+  DialogHeader, DialogTitle, DialogTrigger 
+} from "@/components/ui/dialog"
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select"
 
-// --- DUMMY DATA: DOKUMEN ---
-// Struktur ini disiapkan agar mudah diganti dengan data dari Database/API nanti
-const initialDocs = [
-  { id: "1", title: "SOP Pelayanan Perizinan", category: "sop", size: "1.2 MB", downloads: 145, status: "active", date: "2024-01-10" },
-  { id: "2", title: "Standar Pelayanan (SP) IMB", category: "sp", size: "2.4 MB", downloads: 89, status: "active", date: "2024-01-12" },
-  { id: "3", title: "Formulir Pendaftaran UMKM", category: "formulir", size: "0.5 MB", downloads: 230, status: "active", date: "2024-02-01" },
-  { id: "4", title: "Pedoman Tata Ruang", category: "pedoman", size: "5.1 MB", downloads: 45, status: "inactive", date: "2023-11-20" },
-  { id: "5", title: "Surat Edaran Bupati No. 5", category: "surat-edaran", size: "0.8 MB", downloads: 310, status: "active", date: "2024-01-05" },
-]
+// Import Server Actions (Pastikan path-nya sesuai struktur foldermu)
+import { getDocuments, createDocument, updateDocument, deleteDocument } from "@/actions/documents"
+import { getCategories } from "@/actions/categories"
 
-// --- DUMMY DATA: ANALYTICS ---
-const statsData = {
-  totalVisitors: 1240,
-  totalDownloads: 850,
-  avgSession: "3m 45s",
-  storageUsed: "45%"
+// --- TIPE DATA ---
+// Disesuaikan dengan Prisma Result
+type Category = {
+  id: string
+  name: string
+  slug: string
 }
 
-export function AdminScreen() {
-  // State untuk Data
-  const [documents, setDocuments] = useState(initialDocs)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("all")
+type Document = {
+  id: string
+  title: string
+  slug: string
+  description?: string | null
+  categoryId: string
+  category?: Category
+  filePath: string
+  fileSize: number
+  downloadCount: number
+  viewCount: number
+  isActive: boolean
+  isFeatured: boolean
+  createdAt: Date
+}
 
-  // State untuk Kiosk Control
+type Log = {
+  id: number
+  action: string
+  detail: string
+  time: string
+}
+
+interface AdminScreenProps {
+  onLogout?: () => void;
+  onPreviewKiosk?: () => void;
+}
+
+export function AdminScreen({ onLogout, onPreviewKiosk }: AdminScreenProps) {
+  // STATE UTAMA
+  const [activeTab, setActiveTab] = useState<"analytics" | "documents" | "controls">("analytics")
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [logs, setLogs] = useState<Log[]>([])
+  
+  // STATE LOADING & STATUS
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [isOnline, setIsOnline] = useState(true)
-  const [isCaching, setIsCaching] = useState(false)
-  const [lastSync, setLastSync] = useState("Hari ini, 08:00 WITA")
-  
-  // State untuk Export
-  const [isExporting, setIsExporting] = useState(false)
 
-  // --- LOGIC FILTERING ---
-  const filteredDocs = documents.filter(doc => {
-    const matchSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchCat = selectedCategory === "all" || doc.category === selectedCategory
-    return matchSearch && matchCat
-  })
+  // STATE FILTER & MODAL
+  const [searchQuery, setSearchQuery] = useState("")
+  const [isUploadOpen, setIsUploadOpen] = useState(false)
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [selectedDoc, setSelectedDoc] = useState<Document | null>(null)
 
-  // --- MOCK FUNCTIONS ---
-  
-  const handleExportPDF = () => {
-    setIsExporting(true)
-    // Simulasi proses generate PDF
-    setTimeout(() => {
-      setIsExporting(false)
-      alert("Laporan Statistik berhasil diunduh (Simulasi PDF)")
-    }, 2000)
-  }
+  // --- FETCH DATA (INIT) ---
+  const fetchData = async () => {
+    setIsLoading(true)
+    try {
+      // 1. Fetch Categories
+      const catRes = await getCategories(true)
+      if (catRes.success && catRes.data) {
+        setCategories(catRes.data)
+      }
 
-  const handleSyncData = () => {
-    setIsCaching(true)
-    // Simulasi caching data baru
-    setTimeout(() => {
-      setIsCaching(false)
-      setLastSync(`Hari ini, ${new Date().toLocaleTimeString()} WITA`)
-      alert("Data Kiosk berhasil diperbarui & dicache!")
-    }, 1500)
-  }
-
-  const handleDelete = (id: string) => {
-    if(confirm("Hapus dokumen ini?")) {
-      setDocuments(prev => prev.filter(d => d.id !== id))
+      // 2. Fetch Documents
+      const docRes = await getDocuments({ limit: 100 }) // Ambil 100 teratas
+      if (docRes.success && docRes.data) {
+        setDocuments(docRes.data as Document[])
+      }
+    } catch (error) {
+      console.error("Gagal mengambil data:", error)
+      addLog("System Error", "Gagal mengambil data dari server")
+    } finally {
+      setIsLoading(false)
     }
   }
 
+  // Panggil fetchData saat komponen di-mount
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  // --- LOGIC STATISTIK ---
+  const stats = useMemo(() => {
+    const totalViews = documents.reduce((acc, doc) => acc + (doc.viewCount || 0), 0)
+    const totalDownloads = documents.reduce((acc, doc) => acc + (doc.downloadCount || 0), 0)
+    
+    return {
+       interactions: totalViews + totalDownloads, // Total interaksi kasar
+       docOpens: totalViews,
+       docCount: documents.length,
+       qrScans: documents.reduce((acc, doc) => acc + (doc.downloadCount || 0), 0) // Asumsi download via QR
+    }
+  }, [documents])
+
+  const filteredDocs = documents.filter(doc => 
+    doc.title.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  // --- HELPER LOG ---
+  const addLog = (action: string, detail: string) => {
+    const time = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+    setLogs(prev => [{ id: Date.now(), action, detail, time }, ...prev])
+  }
+
+  // --- HANDLERS (CRUD) ---
+
+  // 1. DELETE DOKUMEN
+  const handleDelete = async (id: string) => {
+    if(!confirm("Yakin ingin menghapus dokumen ini? Data fisik file juga akan dihapus.")) return
+
+    try {
+      const result = await deleteDocument(id)
+      if (result.success) {
+        setDocuments(prev => prev.filter(d => d.id !== id))
+        addLog("Hapus Dokumen", `Dokumen ID-${id.substring(0,6)}... dihapus`)
+      } else {
+        alert("Gagal menghapus: " + result.error)
+      }
+    } catch (error) {
+      console.error(error)
+      alert("Terjadi kesalahan sistem")
+    }
+  }
+
+  // 2. UPLOAD & CREATE DOKUMEN
+  const handleSaveUpload = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    
+    const form = e.target as HTMLFormElement
+    const title = (form.elements.namedItem('title') as HTMLInputElement).value
+    const categoryId = (form.elements.namedItem('category') as HTMLInputElement).value
+    const fileInput = form.elements.namedItem('file') as HTMLInputElement
+    
+    // Validasi sederhana
+    if (!fileInput.files || fileInput.files.length === 0) {
+        alert("Harap pilih file PDF")
+        setIsSubmitting(false)
+        return
+    }
+
+    try {
+        // A. Upload File Fisik ke API Route (/api/upload)
+        const formData = new FormData()
+        formData.append("file", fileInput.files[0])
+
+        const uploadRes = await fetch("/api/upload", {
+            method: "POST",
+            body: formData
+        })
+
+        const uploadData = await uploadRes.json()
+
+        if (!uploadData.success) {
+            throw new Error(uploadData.error || "Gagal upload file fisik")
+        }
+
+        // B. Simpan Metadata ke Database via Server Action
+        const createRes = await createDocument({
+            title: title,
+            categoryId: categoryId,
+            filePath: uploadData.data.filePath, // Path dari API Upload
+            fileSize: uploadData.data.fileSize,
+            isActive: true,
+            isFeatured: false
+        })
+
+        if (createRes.success && createRes.data) {
+            // Update UI State langsung tanpa reload
+            setDocuments([createRes.data as Document, ...documents])
+            addLog("Upload Dokumen", `Berhasil menambahkan ${title}`)
+            setIsUploadOpen(false)
+            form.reset()
+        } else {
+            throw new Error(createRes.error || "Gagal menyimpan ke database")
+        }
+
+    } catch (error: any) {
+        console.error(error)
+        alert(error.message)
+        addLog("Error Upload", error.message)
+    } finally {
+        setIsSubmitting(false)
+    }
+  }
+
+  // 3. EDIT DOKUMEN (Metadata Only)
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedDoc) return
+    setIsSubmitting(true)
+
+    const form = e.target as HTMLFormElement
+    const updatedTitle = (form.elements.namedItem('title') as HTMLInputElement).value
+    const updatedCategoryId = (form.elements.namedItem('category') as HTMLInputElement).value
+
+    try {
+        const result = await updateDocument(selectedDoc.id, {
+            title: updatedTitle,
+            categoryId: updatedCategoryId
+        })
+
+        if (result.success && result.data) {
+            // Update State
+            setDocuments(prev => prev.map(doc => 
+                doc.id === selectedDoc.id ? (result.data as Document) : doc
+            ))
+            addLog("Edit Dokumen", `Mengubah data ${updatedTitle}`)
+            setIsEditOpen(false)
+            setSelectedDoc(null)
+        } else {
+            alert("Gagal update: " + result.error)
+        }
+    } catch (error) {
+        console.error(error)
+        alert("Gagal mengupdate dokumen")
+    } finally {
+        setIsSubmitting(false)
+    }
+  }
+
+  const openEditModal = (doc: Document) => {
+      setSelectedDoc(doc)
+      setIsEditOpen(true)
+  }
+
+  // --- HELPER UTILS ---
+  const getMenuColor = (menuName: string) => {
+    const colors: Record<string, string> = {
+      "Standar Pelayanan": "bg-blue-100 text-blue-700", 
+      "SOP": "bg-purple-100 text-purple-700",
+      "Formulir": "bg-orange-100 text-orange-700", 
+      "Pedoman": "bg-green-100 text-green-700",
+      "Umum": "bg-slate-100 text-slate-700"
+    }
+    return colors[menuName] || colors["Umum"]
+  }
+
+  const formatFileSize = (bytes: number) => {
+      if (bytes === 0) return '0 B'
+      const k = 1024
+      const sizes = ['B', 'KB', 'MB', 'GB']
+      const i = Math.floor(Math.log(bytes) / Math.log(k))
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+  }
+
+  // --- RENDER ---
   return (
-    <div className="flex h-full flex-col bg-slate-50">
-      <NavigationBar title="Admin Dashboard" showBack={false} />
+    <div className="flex h-screen w-full bg-slate-50 overflow-hidden">
+      
+      {/* SIDEBAR */}
+      <aside className="w-64 bg-slate-900 text-white flex flex-col shrink-0">
+        <div className="h-16 flex items-center px-6 border-b border-slate-700">
+           <div className="h-8 w-8 rounded bg-blue-500 flex items-center justify-center mr-3 font-bold text-white">SP</div>
+           <span className="font-bold text-lg tracking-wide">SIPINTER Admin</span>
+        </div>
+        <div className="flex-1 py-6 px-3 space-y-1">
+           <SidebarButton active={activeTab === "analytics"} onClick={() => setActiveTab("analytics")} icon={<LayoutDashboard className="h-5 w-5"/>} label="Dashboard" />
+           <SidebarButton active={activeTab === "documents"} onClick={() => setActiveTab("documents")} icon={<FileText className="h-5 w-5"/>} label="Dokumen" />
+           <SidebarButton active={activeTab === "controls"} onClick={() => setActiveTab("controls")} icon={<Settings className="h-5 w-5"/>} label="Kiosk Control" />
+        </div>
+        <div className="p-4 border-t border-slate-700 space-y-2">
+           <Button variant="secondary" className="w-full justify-start gap-2 bg-slate-800 text-slate-200 hover:bg-slate-700 border-none" onClick={onPreviewKiosk}>
+              <MonitorPlay className="h-4 w-4" /> Preview Kiosk
+           </Button>
+           <Button variant="destructive" className="w-full justify-start gap-2" onClick={() => { if(confirm("Yakin ingin keluar?")) onLogout?.() }}>
+              <LogOut className="h-4 w-4" /> Logout
+           </Button>
+        </div>
+      </aside>
 
-      <div className="flex-1 overflow-y-auto p-4 lg:p-8">
-        <Tabs defaultValue="analytics" className="space-y-6">
-          
-          <TabsList className="bg-white p-1 border shadow-sm">
-            <TabsTrigger value="analytics" className="gap-2"><PieChart className="h-4 w-4"/> Analytics</TabsTrigger>
-            <TabsTrigger value="documents" className="gap-2"><FileText className="h-4 w-4"/> Dokumen</TabsTrigger>
-            <TabsTrigger value="controls" className="gap-2"><Settings className="h-4 w-4"/> Kiosk Control</TabsTrigger>
-          </TabsList>
+      {/* MAIN CONTENT */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        <header className="h-16 bg-white border-b flex items-center justify-between px-6 shrink-0 z-10">
+           <h1 className="text-xl font-bold text-slate-800 capitalize">
+              {activeTab === "analytics" ? "Overview Statistik" : activeTab === "documents" ? "Manajemen Dokumen" : "Pengaturan Sistem"}
+           </h1>
+           <div className="flex items-center gap-4">
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border cursor-pointer hover:opacity-80 transition-opacity ${isOnline ? "bg-green-50 text-green-700 border-green-200" : "bg-slate-100 text-slate-600 border-slate-200"}`} onClick={() => setIsOnline(!isOnline)}>
+                 {isOnline ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
+                 {isOnline ? "SYSTEM ONLINE" : "OFFLINE MODE"}
+              </div>
+              <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold border border-slate-200">A</div>
+           </div>
+        </header>
 
-          {/* === TAB 1: ANALYTICS LOCAL === */}
-          <TabsContent value="analytics" className="space-y-6">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-               <StatsCard title="Total Pengunjung" value={statsData.totalVisitors} icon={<LayoutDashboard className="text-blue-500" />} />
-               <StatsCard title="Dokumen Diunduh" value={statsData.totalDownloads} icon={<Download className="text-green-500" />} />
-               <StatsCard title="Rata-rata Sesi" value={statsData.avgSession} icon={<RefreshCw className="text-orange-500" />} />
-               <StatsCard title="Penyimpanan" value={statsData.storageUsed} icon={<Settings className="text-purple-500" />} />
-            </div>
+        {/* Content Body */}
+        <main className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
+           
+           {/* === TAB ANALYTICS === */}
+           {activeTab === "analytics" && (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                 {/* Stat Cards */}
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <StatsCard title="Total Views" value={`${stats.docOpens}`} icon={<MousePointerClick className="text-blue-500" />} />
+                    <StatsCard title="Total Dokumen" value={`${stats.docCount}`} icon={<FileText className="text-indigo-500" />} />
+                    <StatsCard title="Popularity" value={`${stats.interactions}`} icon={<Star className="text-yellow-500" />} />
+                    <StatsCard title="Est. QR Scans" value={`${stats.qrScans}`} icon={<QrCode className="text-green-500" />} />
+                 </div>
 
-            <Card className="shadow-sm">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Laporan Aktivitas Bulanan</CardTitle>
-                    <CardDescription>Rekapitulasi interaksi user pada Kiosk</CardDescription>
-                  </div>
-                  <Button onClick={handleExportPDF} disabled={isExporting} className="bg-slate-800 text-white gap-2">
-                    {isExporting ? <RefreshCw className="h-4 w-4 animate-spin"/> : <FileText className="h-4 w-4"/>}
-                    {isExporting ? "Memproses..." : "Export Laporan PDF"}
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64 flex items-center justify-center bg-slate-100 rounded-xl border border-dashed border-slate-300">
-                   <div className="text-center text-slate-400">
-                      <BarChart className="h-16 w-16 mx-auto mb-2 opacity-50"/>
-                      <p>Grafik Visualisasi Data akan tampil di sini</p>
-                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Log Aktivitas Terbaru */}
+                    <Card className="shadow-sm border-slate-200 flex flex-col lg:col-span-3">
+                        <CardHeader><CardTitle className="text-base">Aktivitas Admin</CardTitle><CardDescription>Log aktivitas sesi ini</CardDescription></CardHeader>
+                        <CardContent>
+                           {logs.length === 0 ? (
+                               <div className="text-center text-slate-400 text-sm py-8">Belum ada aktivitas baru</div>
+                           ) : (
+                               <div className="space-y-4 max-h-[300px] overflow-y-auto">
+                                  {logs.map((log) => (
+                                     <div key={log.id} className="flex gap-3 pb-3 border-b border-slate-100 last:border-0 last:pb-0">
+                                        <div className="h-2 w-2 mt-2 rounded-full bg-blue-500 shrink-0" />
+                                        <div>
+                                           <p className="text-sm font-medium text-slate-800">{log.action}</p>
+                                           <p className="text-xs text-slate-500">{log.detail}</p>
+                                           <p className="text-[10px] text-slate-400 mt-1">{log.time}</p>
+                                        </div>
+                                     </div>
+                                  ))}
+                               </div>
+                           )}
+                        </CardContent>
+                    </Card>
+                 </div>
+              </div>
+           )}
 
-          {/* === TAB 2: MANAJEMEN DOKUMEN === */}
-          <TabsContent value="documents" className="space-y-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                   <CardTitle>Pustaka Dokumen</CardTitle>
-                   <CardDescription>Kelola file, link, dan pengelompokan (Tag)</CardDescription>
-                </div>
-                <Button className="bg-[#0F4C81] hover:bg-[#0b3d69] gap-2">
-                   <Upload className="h-4 w-4" /> Upload Baru
-                </Button>
-              </CardHeader>
-              <CardContent>
-                
-                {/* Tools Bar: Search & Filter */}
-                <div className="flex flex-col lg:flex-row gap-4 mb-6">
-                   <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                      <Input 
-                        placeholder="Cari judul dokumen..." 
-                        className="pl-9"
-                        value={searchQuery}
+           {/* === TAB DOCUMENTS (CRUD) === */}
+           {activeTab === "documents" && (
+              <div className="space-y-4 animate-in fade-in duration-300">
+                 <div className="flex flex-col sm:flex-row justify-between gap-4">
+                    <div className="relative w-full max-w-sm">
+                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                       <Input 
+                        placeholder="Cari dokumen..." 
+                        className="pl-9 bg-white" 
+                        value={searchQuery} 
                         onChange={(e) => setSearchQuery(e.target.value)} 
-                      />
-                   </div>
-                   <div className="flex items-center gap-2">
-                      <Filter className="h-4 w-4 text-slate-500" />
-                      <select 
-                        className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:ring-2 focus:ring-ring"
-                        value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
-                      >
-                        <option value="all">Semua Kategori</option>
-                        <option value="sp">SP (Standar Pelayanan)</option>
-                        <option value="sop">SOP</option>
-                        <option value="formulir">Formulir</option>
-                        <option value="pedoman">Pedoman</option>
-                        <option value="surat-edaran">Surat Edaran</option>
-                      </select>
-                   </div>
-                </div>
+                       />
+                    </div>
+                    
+                    {/* BUTTON UPLOAD DENGAN DIALOG */}
+                    <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="bg-[#0F4C81] hover:bg-[#0b3d69] gap-2"><Upload className="h-4 w-4" /> Upload Dokumen</Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[500px]">
+                            <form onSubmit={handleSaveUpload}>
+                                <DialogHeader>
+                                    <DialogTitle>Upload Dokumen Baru</DialogTitle>
+                                    <DialogDescription>Isi detail dokumen yang akan ditampilkan di Kiosk.</DialogDescription>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="title">Judul Dokumen</Label>
+                                        <Input id="title" name="title" placeholder="Contoh: SOP Pelayanan..." required disabled={isSubmitting} />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="category">Kategori / Menu</Label>
+                                        <Select name="category" required disabled={isSubmitting}>
+                                            <SelectTrigger><SelectValue placeholder="Pilih Kategori" /></SelectTrigger>
+                                            <SelectContent>
+                                                {categories.map((cat) => (
+                                                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="file">File PDF</Label>
+                                        <Input id="file" name="file" type="file" accept=".pdf" required disabled={isSubmitting} />
+                                    </div>
+                                </div>
+                                <DialogFooter>
+                                    <Button type="button" variant="outline" onClick={() => setIsUploadOpen(false)} disabled={isSubmitting}>Batal</Button>
+                                    <Button type="submit" disabled={isSubmitting}>
+                                        {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Uploading...</> : "Simpan Dokumen"}
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
+                 </div>
 
-                {/* Table */}
-                <div className="rounded-md border">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-slate-50 text-slate-500 font-medium">
-                      <tr>
-                        <th className="p-4">Nama Dokumen</th>
-                        <th className="p-4">Tag / Kategori</th>
-                        <th className="p-4">Statistik</th>
-                        <th className="p-4">Status</th>
-                        <th className="p-4 text-right">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredDocs.map((doc) => (
-                        <tr key={doc.id} className="border-t hover:bg-slate-50/50">
-                          <td className="p-4 font-medium text-slate-700">{doc.title}</td>
-                          <td className="p-4">
-                            <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-blue-100 text-blue-700 uppercase">
-                              {doc.category}
-                            </span>
-                          </td>
-                          <td className="p-4 text-slate-500">{doc.downloads} views</td>
-                          <td className="p-4">
-                            {doc.status === 'active' ? (
-                              <span className="flex items-center gap-1 text-green-600 text-xs font-bold">
-                                <CheckCircle2 className="h-3 w-3"/> Aktif
-                              </span>
+                 <Card className="border-slate-200 shadow-sm">
+                    {isLoading ? (
+                        <div className="p-8 text-center text-slate-500 flex flex-col items-center justify-center">
+                            <Loader2 className="h-8 w-8 animate-spin mb-2 text-[#0F4C81]"/>
+                            Memuat data dokumen...
+                        </div>
+                    ) : (
+                        <div className="rounded-md">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-slate-50 text-slate-500 font-medium border-b">
+                            <tr>
+                                <th className="p-4 w-[40%]">Nama Dokumen</th>
+                                <th className="p-4">Kategori</th>
+                                <th className="p-4">Ukuran</th>
+                                <th className="p-4">Views</th>
+                                <th className="p-4 text-right">Aksi</th>
+                            </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                            {filteredDocs.length === 0 ? (
+                                <tr><td colSpan={5} className="p-4 text-center text-slate-400">Tidak ada dokumen ditemukan.</td></tr>
                             ) : (
-                              <span className="flex items-center gap-1 text-slate-400 text-xs font-bold">
-                                <AlertCircle className="h-3 w-3"/> Draft
-                              </span>
+                                filteredDocs.map((doc) => (
+                                    <tr key={doc.id} className="hover:bg-slate-50 bg-white transition-colors">
+                                        <td className="p-4 font-medium text-slate-700 flex items-center gap-3">
+                                            <div className="h-8 w-8 rounded bg-red-50 text-red-500 flex items-center justify-center border border-red-100 shrink-0">
+                                                <FileText className="h-4 w-4"/>
+                                            </div>
+                                            <div className="flex flex-col truncate">
+                                                <span className="truncate">{doc.title}</span>
+                                                <span className="text-[10px] text-slate-400">{doc.slug}</span>
+                                            </div>
+                                        </td>
+                                        <td className="p-4">
+                                            <Badge className={`${getMenuColor(doc.category?.name || "Umum")} border-none px-2.5 py-0.5 font-semibold text-xs rounded-md shadow-none`}>
+                                                {doc.category?.name || "Uncategorized"}
+                                            </Badge>
+                                        </td>
+                                        <td className="p-4 text-slate-500 font-mono text-xs">{formatFileSize(doc.fileSize)}</td>
+                                        <td className="p-4 text-slate-500">{doc.viewCount}</td>
+                                        <td className="p-4 text-right flex justify-end gap-1">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => openEditModal(doc)}><Edit className="h-4 w-4" /></Button>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => handleDelete(doc.id)}><Trash2 className="h-4 w-4" /></Button>
+                                        </td>
+                                    </tr>
+                                ))
                             )}
-                          </td>
-                          <td className="p-4 text-right">
-                             <div className="flex justify-end gap-2">
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500">
-                                   <Edit className="h-4 w-4" />
+                            </tbody>
+                        </table>
+                        </div>
+                    )}
+                 </Card>
+
+                 {/* DIALOG EDIT (POPUP TERPISAH) */}
+                 <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                    <DialogContent className="sm:max-w-[500px]">
+                        <form onSubmit={handleSaveEdit}>
+                            <DialogHeader>
+                                <DialogTitle>Edit Dokumen</DialogTitle>
+                                <DialogDescription>Ubah informasi metadata dokumen.</DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="grid gap-2">
+                                    <Label>Judul Dokumen</Label>
+                                    <Input id="edit-title" name="title" defaultValue={selectedDoc?.title} required disabled={isSubmitting} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Kategori</Label>
+                                    <Select name="category" defaultValue={selectedDoc?.categoryId} disabled={isSubmitting}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            {categories.map((cat) => (
+                                                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)} disabled={isSubmitting}>Batal</Button>
+                                <Button type="submit" disabled={isSubmitting}>
+                                    {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
                                 </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => handleDelete(doc.id)}>
-                                   <Trash2 className="h-4 w-4" />
-                                </Button>
-                             </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {filteredDocs.length === 0 && (
-                    <div className="p-8 text-center text-slate-500">Tidak ada dokumen ditemukan.</div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                 </Dialog>
+              </div>
+           )}
 
-          {/* === TAB 3: KIOSK CONTROL === */}
-          <TabsContent value="controls" className="space-y-6">
-             <div className="grid gap-6 md:grid-cols-2">
-                
-                {/* Connectivity Control */}
-                <Card>
-                   <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                         {isOnline ? <Wifi className="h-5 w-5 text-green-500"/> : <WifiOff className="h-5 w-5 text-red-500"/>}
-                         Mode Koneksi
-                      </CardTitle>
-                      <CardDescription>Atur perilaku aplikasi saat terhubung internet</CardDescription>
-                   </CardHeader>
-                   <CardContent className="flex items-center justify-between">
-                      <div>
-                         <p className="font-medium">Status: {isOnline ? "Online Mode" : "Offline Mode"}</p>
-                         <p className="text-xs text-slate-500 mt-1">
-                            {isOnline 
-                              ? "Aplikasi akan mengambil data terbaru langsung dari server." 
-                              : "Aplikasi menggunakan data lokal (Cache). Fitur Peta Online dimatikan."}
-                         </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                         <Button 
-                            variant={isOnline ? "default" : "outline"} 
-                            onClick={() => setIsOnline(true)}
-                            className={isOnline ? "bg-green-600 hover:bg-green-700" : ""}
-                         >
-                            Online
-                         </Button>
-                         <Button 
-                            variant={!isOnline ? "default" : "outline"} 
-                            onClick={() => setIsOnline(false)}
-                            className={!isOnline ? "bg-slate-600 hover:bg-slate-700" : ""}
-                         >
-                            Offline
-                         </Button>
-                      </div>
-                   </CardContent>
-                </Card>
-
-                {/* Caching Control */}
-                <Card>
-                   <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                         <RefreshCw className={`h-5 w-5 text-blue-500 ${isCaching ? "animate-spin" : ""}`}/>
-                         Sinkronisasi & Cache
-                      </CardTitle>
-                      <CardDescription>Update konten lokal agar tersedia saat Offline</CardDescription>
-                   </CardHeader>
-                   <CardContent className="flex items-center justify-between">
-                      <div>
-                         <p className="font-medium">Terakhir Sinkronisasi:</p>
-                         <p className="text-sm text-slate-500 font-mono mt-1">{lastSync}</p>
-                      </div>
-                      <Button onClick={handleSyncData} disabled={isCaching}>
-                         {isCaching ? "Sedang Mengunduh..." : "Sync Data Sekarang"}
-                      </Button>
-                   </CardContent>
-                </Card>
-
-             </div>
-          </TabsContent>
-
-        </Tabs>
+           {/* === TAB KIOSK CONTROL === */}
+           {activeTab === "controls" && (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="grid gap-6 md:grid-cols-2">
+                      <Card className="border-slate-200 shadow-sm">
+                         <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Wifi className="h-5 w-5 text-blue-500"/> Mode Koneksi</CardTitle><CardDescription>Status sinkronisasi data</CardDescription></CardHeader>
+                         <CardContent>
+                            <div className="flex items-center justify-between bg-slate-50 p-4 rounded-lg border border-slate-100">
+                               <span className="font-medium text-sm text-slate-700">Status Sync</span>
+                               <Button variant="outline" size="sm" className="gap-2 bg-white" onClick={fetchData} disabled={isLoading}>
+                                    <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`}/> Sync Now
+                               </Button>
+                            </div>
+                         </CardContent>
+                      </Card>
+                  </div>
+              </div>
+           )}
+        </main>
       </div>
     </div>
   )
 }
 
-// Helper Component for Stats
-function StatsCard({ title, value, icon }: { title: string, value: string | number, icon: any }) {
-  return (
-    <Card>
-      <CardContent className="p-6 flex items-center gap-4">
-        <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center shrink-0 text-xl">
-           {icon}
-        </div>
-        <div>
-           <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">{title}</p>
-           <h3 className="text-2xl font-bold text-slate-800">{value}</h3>
-        </div>
-      </CardContent>
-    </Card>
-  )
+// --- SUB COMPONENTS (TIDAK BERUBAH) ---
+function SidebarButton({ active, onClick, icon, label }: any) {
+   return (
+      <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${active ? "bg-blue-600 text-white shadow-md" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}>
+         {icon}{label}{active && <ChevronRight className="ml-auto h-4 w-4 opacity-50" />}
+      </button>
+   )
+}
+
+function StatsCard({ title, value, icon }: any) {
+   return (
+     <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+       <CardContent className="p-5 flex items-center gap-4">
+         <div className="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center shrink-0 text-xl border border-slate-100">{icon}</div>
+         <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{title}</p>
+            <h3 className="text-2xl font-bold text-slate-800">{value}</h3>
+         </div>
+       </CardContent>
+     </Card>
+   )
 }

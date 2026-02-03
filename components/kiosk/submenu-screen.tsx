@@ -1,9 +1,21 @@
 "use client"
 
 import { useKiosk } from "./kiosk-provider"
-import { getMenuById } from "@/lib/kiosk-data"
-import { Card } from "@/components/ui/card"
 import { NavigationBar } from "./navigation-bar"
+import { Card } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
+import { menuItems } from "@/lib/kiosk-data"
+import * as LucideIcons from "lucide-react"
+
+// Helper Icon
+const DynamicIcon = ({ name, className }: { name: string | any; className?: string }) => {
+  if (!name) return <LucideIcons.HelpCircle className={className} />
+  if (typeof name === 'string') {
+     const IconComponent = (LucideIcons as any)[name]
+     return IconComponent ? <IconComponent className={className} /> : <LucideIcons.HelpCircle className={className} />
+  }
+  return name
+}
 
 interface SubmenuScreenProps {
   menuId: string
@@ -11,68 +23,106 @@ interface SubmenuScreenProps {
 }
 
 export function SubmenuScreen({ menuId, menuTitle }: SubmenuScreenProps) {
-  const { navigateTo, trackMenu } = useKiosk()
-  const menu = getMenuById(menuId)
+  const { navigateTo } = useKiosk()
 
-  if (!menu || !menu.submenu) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-lg text-muted-foreground lg:text-2xl">Menu tidak ditemukan</p>
-      </div>
-    )
-  }
+  const parentMenu = menuItems.find((item) => item.id === menuId)
+  if (!parentMenu || !parentMenu.submenu) return null
+  
+  const items = parentMenu.submenu
+  const count = items.length
 
-  const handleSubmenuClick = (item: (typeof menu.submenu)[0]) => {
-    trackMenu(item.id, item.title)
-    
-    if (item.hasDocuments) {
-      navigateTo({ type: "documents", categoryId: item.id, categoryTitle: item.title })
-    } else if (item.hasContent) {
-      navigateTo({ type: "content", menuId, submenuId: item.id, title: item.title })
-    } else if (item.hasSectors) {
-      navigateTo({ type: "sectors", menuId, menuTitle: item.title })
-    } else if (item.hasVideo && item.videoUrl) {
-      navigateTo({ type: "video-player", title: item.title, videoUrl: item.videoUrl })
-    }
-  }
-
-  // Calculate grid layout based on number of items
-  const getGridClass = () => {
-    const count = menu.submenu?.length || 0
-    if (count <= 2) return "grid-cols-2"
-    if (count <= 4) return "grid-cols-2 grid-rows-2"
+  // === LOGIKA FILL SCREEN ===
+  const getResponsiveGridClass = () => {
+    if (count <= 3) return "grid-cols-3 grid-rows-1"
+    if (count === 4) return "grid-cols-2 grid-rows-2"
     if (count <= 6) return "grid-cols-3 grid-rows-2"
-    return "grid-cols-4 grid-rows-2"
+    if (count <= 8) return "grid-cols-4 grid-rows-2"
+    return "grid-cols-4 grid-rows-3"
   }
+
+  const isGiantCard = count <= 3
 
   return (
-    <div className="flex h-full flex-col">
-      <NavigationBar title={menuTitle} showBack />
+    <div className="flex h-full flex-col bg-slate-50">
+      {/* Navbar Konsisten */}
+      <NavigationBar title={menuTitle} showBack={true} />
 
-      {/* Content */}
-      <main className="flex-1 bg-background p-3 lg:p-6">
-        <div className={`grid h-full gap-3 lg:gap-5 ${getGridClass()}`}>
-          {menu.submenu.map((item) => (
+      {/* CONTAINER UTAMA */}
+      <div className="flex-1 overflow-hidden p-8">
+        
+        {/* GRID CONTAINER */}
+        <div className={cn(
+           "grid h-full w-full gap-8", 
+           getResponsiveGridClass()
+        )}>
+          {items.map((item) => (
             <Card
               key={item.id}
-              onClick={() => handleSubmenuClick(item)}
-              className="group flex cursor-pointer flex-col items-center justify-center gap-2 p-3 shadow-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] bg-card text-card-foreground hover:bg-primary hover:text-primary-foreground lg:gap-4 lg:p-6"
+              onClick={() => {
+                if (item.hasDocuments) {
+                  navigateTo({ type: "documents", categoryId: item.id, categoryTitle: item.title })
+                } else if (item.hasContent) {
+                  navigateTo({ type: "content", menuId: menuId, submenuId: item.id, title: item.title })
+                } else if (item.hasSectors) {
+                  navigateTo({ type: "sectors", menuId: item.id, menuTitle: item.title })
+                } else if (item.hasVideo) {
+                  navigateTo({ type: "video-player", title: item.title, videoUrl: item.videoUrl || "" })
+                }
+              }}
+              className={cn(
+                // === STYLE CARD ===
+                "group relative flex cursor-pointer flex-col items-center justify-center p-6 text-center",
+                "bg-white shadow-sm",
+                
+                // === PERUBAHAN DISINI (Border Tipis) ===
+                "border border-slate-200", // Border tipis 1px (Hairline)
+                "hover:border-[#0F4C81]",  // Saat disentuh jadi biru
+                
+                // Radius (Tidak terlalu melengkung)
+                "rounded-2xl", 
+                
+                // Full Size
+                "h-full w-full",
+
+                // Efek Animasi
+                "transition-all duration-300 ease-out", 
+                "hover:scale-[1.02]", 
+                "hover:shadow-xl",    
+                "active:scale-[0.98]" 
+              )}
             >
-              <div className="rounded-xl bg-primary/10 p-3 transition-colors group-hover:bg-card/20 lg:rounded-2xl lg:p-5">
-                <div className="[&>svg]:h-6 [&>svg]:w-6 lg:[&>svg]:h-10 lg:[&>svg]:w-10">
-                  {item.icon}
-                </div>
+              {/* ICON CONTAINER */}
+              <div className={cn(
+                "flex items-center justify-center rounded-xl transition-colors duration-300",
+                "bg-slate-100 text-slate-700 group-hover:bg-[#0F4C81] group-hover:text-white",
+                isGiantCard ? "mb-6 h-36 w-36" : "mb-4 h-24 w-24"
+              )}>
+                <DynamicIcon 
+                   name={item.icon} 
+                   className={isGiantCard ? "h-16 w-16" : "h-10 w-10"} 
+                />
               </div>
-              <div className="text-center">
-                <h2 className="text-base font-bold lg:text-xl">{item.title}</h2>
-                <p className="mt-0.5 text-xs text-muted-foreground group-hover:text-primary-foreground/80 lg:mt-1 lg:text-sm">
+
+              {/* CONTENT TEXT */}
+              <div className="w-full space-y-2 px-4">
+                <h3 className={cn(
+                  "font-bold leading-tight text-slate-800",
+                  isGiantCard ? "text-4xl" : "text-2xl"
+                )}>
+                  {item.title}
+                </h3>
+
+                <p className={cn(
+                  "text-slate-400 line-clamp-2", 
+                  isGiantCard ? "text-xl" : "text-base"
+                )}>
                   {item.description}
                 </p>
               </div>
             </Card>
           ))}
         </div>
-      </main>
+      </div>
     </div>
   )
 }

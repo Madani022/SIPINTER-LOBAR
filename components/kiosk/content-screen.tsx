@@ -53,7 +53,7 @@ export function ContentScreen({ menuId, submenuId, title }: ContentScreenProps) 
                 </div>
               </div>
               <p className="mt-3 font-mono text-xs text-primary lg:mt-4 lg:text-sm">
-                gistaru.atrbpn.go.id/rdtrinteraktif
+                https://gistaru.atrbpn.go.id/rdtrinteraktif/
               </p>
             </div>
             <Button
@@ -62,7 +62,7 @@ export function ContentScreen({ menuId, submenuId, title }: ContentScreenProps) 
               onClick={() => navigateTo({ 
                 type: "qr-page", 
                 title: "RDTR Interaktif", 
-                url: "https://rdtr.lombokbaratkab.go.id",
+                url: "https://gistaru.atrbpn.go.id/rdtrinteraktif/",
                 description: "Peta Rencana Detail Tata Ruang interaktif untuk melihat zonasi dan peruntukan lahan di Kabupaten Lombok Barat."
               })}
             >
@@ -94,11 +94,11 @@ export function ContentScreen({ menuId, submenuId, title }: ContentScreenProps) 
               </p>
               <div className="flex justify-center">
                 <div className="rounded-lg border-4 border-primary/20 bg-card p-3 lg:rounded-xl lg:p-4">
-                  <QrCodePlaceholder url="https://gistaru.atrbpn.go.id/rdtrinteraktif/" />
+                  <QrCodePlaceholder url="https://gistaru.atrbpn.go.id/rtronline/" />
                 </div>
               </div>
               <p className="mt-3 font-mono text-xs text-primary lg:mt-4 lg:text-sm">
-                gistaru.atrbpn.go.id/rdtrinteraktif
+                https://gistaru.atrbpn.go.id/rtronline/
               </p>
             </div>
             <Button
@@ -107,7 +107,7 @@ export function ContentScreen({ menuId, submenuId, title }: ContentScreenProps) 
               onClick={() => navigateTo({ 
                 type: "qr-page", 
                 title: "RDTR Interaktif", 
-                url: "https://rdtr.lombokbaratkab.go.id",
+                url: "https://gistaru.atrbpn.go.id/rtronline/",
                 description: "Peta Rencana Detail Tata Ruang interaktif untuk melihat zonasi dan peruntukan lahan di Kabupaten Lombok Barat."
               })}
             >

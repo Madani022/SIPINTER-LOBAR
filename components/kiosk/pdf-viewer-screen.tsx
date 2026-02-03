@@ -1,345 +1,224 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useKiosk, type DocumentItem } from "./kiosk-provider"
+import { useKiosk } from "./kiosk-provider"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, X, QrCode, Loader2, Home, Smartphone } from "lucide-react"
+import { Document, Page, pdfjs } from "react-pdf"
+import { 
+  ChevronLeft, ChevronRight, 
+  ZoomIn, ZoomOut, 
+  Loader2, RefreshCw, X, 
+  QrCode, Download 
+} from "lucide-react"
 
-// --- PDF.JS SETUP ---
-import * as pdfjsLib from "pdfjs-dist"
-
-// Kita gunakan CDN yang sesuai dengan versi library agar aman, 
-// atau fallback ke path local jika Anda sudah setup file-nya.
-// Jika error worker, pastikan versi CDN sama dengan versi package.json
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
+// --- SETUP WORKER (Wajib) ---
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
 
 interface PDFViewerScreenProps {
-  document: DocumentItem
+  document: any
 }
 
 export function PDFViewerScreen({ document }: PDFViewerScreenProps) {
-  const { goBack, goHome } = useKiosk()
+  const { navigateTo } = useKiosk()
   
-  // State UI
-  const [isLoading, setIsLoading] = useState(true)
-  const [showQrModal, setShowQrModal] = useState(false)
+  const [numPages, setNumPages] = useState<number>(0)
+  const [pageNumber, setPageNumber] = useState<number>(1)
+  const [scale, setScale] = useState<number>(1.0) // 1.0 = Fit to Screen
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   
-  // State PDF
-  const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(0)
-
-  // Refs
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  // State untuk menghitung tinggi layar
+  const [basePageHeight, setBasePageHeight] = useState(600)
   const containerRef = useRef<HTMLDivElement>(null)
-  const renderTaskRef = useRef<any>(null)
 
-  // 1. Load Dokumen PDF (Hanya sekali saat mount/document berubah)
+  // Ambil URL
+  const fileUrl = document.url || document.pdfUrl
+
+  // Hitung tinggi container agar pas layar
   useEffect(() => {
-    let isCancelled = false
-
-    const loadPdf = async () => {
-      try {
-        setIsLoading(true)
-        // Bersihkan state lama
-        if (renderTaskRef.current) {
-            await renderTaskRef.current.cancel().catch(() => {})
-        }
-        
-        const loadingTask = pdfjsLib.getDocument(document.pdfUrl)
-        const pdf = await loadingTask.promise
-        
-        if (!isCancelled) {
-          setPdfDoc(pdf)
-          setTotalPages(pdf.numPages)
-          setCurrentPage(1)
-        }
-      } catch (error) {
-        console.error("Error loading PDF:", error)
-      } finally {
-        if (!isCancelled) setIsLoading(false)
+    function handleResize() {
+      if (containerRef.current) {
+        // Kurangi padding atas bawah biar rapi
+        setBasePageHeight(containerRef.current.clientHeight - 40) 
       }
     }
 
-    loadPdf()
+    handleResize()
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
 
-    return () => {
-      isCancelled = true
-    }
-  }, [document.pdfUrl])
+  function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
+    setNumPages(numPages)
+    setLoading(false)
+  }
 
-  // 2. Render Halaman ke Canvas
-  useEffect(() => {
-    const renderPage = async () => {
-      if (!pdfDoc || !canvasRef.current || !containerRef.current) return
+  function onDocumentLoadError(err: Error) {
+    console.error("PDF Error:", err)
+    setLoading(false)
+    setError("Gagal memuat dokumen.")
+  }
 
-      try {
-        setIsLoading(true)
+  // Fungsi Zoom
+  const handleZoomIn = () => setScale((prev) => Math.min(prev + 0.2, 2.0)) // Max 2x
+  const handleZoomOut = () => setScale((prev) => Math.max(prev - 0.2, 1.0)) // Min 1x (Fit)
 
-        // Cancel render sebelumnya jika user klik tombol terlalu cepat
-        if (renderTaskRef.current) {
-           try {
-             await renderTaskRef.current.cancel()
-           } catch (e) {
-             // Ignore cancel error
-           }
-        }
+  // Fungsi QR Download
+  const handleQrDownload = () => {
+    navigateTo({
+        type: "qr-page",
+        title: "Download Dokumen",
+        url: fileUrl,
+        description: `Scan QR Code ini untuk mengunduh dokumen "${document.title}" ke HP Anda.`
+    })
+  }
 
-        const page = await pdfDoc.getPage(currentPage)
-        const canvas = canvasRef.current
-        const container = containerRef.current
-        
-        // --- LOGIKA SKALA RESPONSIF ---
-        // Kita ambil viewport asli (skala 1)
-        const unscaledViewport = page.getViewport({ scale: 1 })
-        
-        // Hitung rasio agar muat di container (dikurangi padding dikit)
-        const containerWidth = container.clientWidth
-        const containerHeight = container.clientHeight
-        
-        const scaleX = (containerWidth - 40) / unscaledViewport.width
-        const scaleY = (containerHeight - 40) / unscaledViewport.height
-        // Pilih yang paling kecil agar PDF tidak terpotong (contain)
-        const scale = Math.min(scaleX, scaleY)
-
-        const viewport = page.getViewport({ scale })
-
-        // Support High DPI Screens (Retina) agar teks tajam di TV 4K/FHD
-        const outputScale = window.devicePixelRatio || 1
-
-        canvas.width = Math.floor(viewport.width * outputScale)
-        canvas.height = Math.floor(viewport.height * outputScale)
-        canvas.style.width = `${Math.floor(viewport.width)}px`
-        canvas.style.height = `${Math.floor(viewport.height)}px`
-
-        const ctx = canvas.getContext('2d')
-        if (!ctx) return
-
-        // Transform agar sesuai skala DPI
-        const transform = outputScale !== 1 
-          ? [outputScale, 0, 0, outputScale, 0, 0] 
-          : undefined
-
-        const renderContext = {
-          canvasContext: ctx,
-          viewport: viewport,
-          transform
-        }
-
-        renderTaskRef.current = page.render(renderContext)
-        await renderTaskRef.current.promise
-        
-        setIsLoading(false)
-
-      } catch (error: any) {
-        if (error.name !== 'RenderingCancelledException') {
-            console.error("Render error:", error)
-            setIsLoading(false)
-        }
-      }
-    }
-
-    // Beri sedikit delay agar layout container stabil dulu
-    // atau requestAnimationFrame
-    requestAnimationFrame(() => renderPage())
-
-  }, [pdfDoc, currentPage])
-
-
-  // Handlers
-  const handlePrevPage = () => setCurrentPage(p => Math.max(1, p - 1))
-  const handleNextPage = () => setCurrentPage(p => Math.min(totalPages, p + 1))
-  
-  const downloadUrl = `https://drive.google.com/file/d/example/${document.id}`
+  // --- TAMPILAN ERROR ---
+  if (!fileUrl) {
+      return (
+        <div className="flex h-full flex-col items-center justify-center p-8 text-center bg-slate-50">
+             <div className="rounded-full bg-red-100 p-6 mb-4">
+                <RefreshCw className="h-12 w-12 text-red-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-slate-800">Dokumen Tidak Ditemukan</h3>
+            <Button size="lg" className="mt-8 text-lg" onClick={() => navigateTo({ type: "home" })}>
+                Kembali ke Menu Utama
+            </Button>
+        </div>
+      )
+  }
 
   return (
-    <div className="flex h-full flex-col bg-foreground/95">
-      {/* --- UI HEADER: Menggunakan Style Lama --- */}
-      <header className="flex items-center justify-between border-b border-border/20 bg-card px-6 py-4">
-        <div className="flex items-center gap-3">
-          <Button
-            size="lg" variant="ghost" onClick={goBack}
-            className="h-14 gap-3 px-6 text-lg font-semibold hover:bg-muted"
+    <div className="flex h-screen flex-col bg-slate-100 overflow-hidden">
+      
+      {/* 1. HEADER (Judul & Close) */}
+      <div className="bg-white px-6 py-4 shadow-sm z-10 flex items-center justify-between shrink-0">
+          <div className="flex flex-col">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">DOKUMEN</span>
+            <h1 className="text-xl font-bold text-slate-800 line-clamp-1">
+                {document.title || "Tampilan Dokumen"}
+            </h1>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-12 w-12 rounded-full bg-slate-100 hover:bg-red-100 hover:text-red-600"
+            onClick={() => navigateTo({ type: "home" })}
           >
-            <X className="h-6 w-6" /> Tutup
+             <X className="h-6 w-6" />
           </Button>
-          <Button
-            size="lg" variant="outline" onClick={goHome}
-            className="h-14 gap-2 px-6 text-lg font-semibold bg-transparent"
-          >
-            <Home className="h-5 w-5" /> Beranda
-          </Button>
-        </div>
+      </div>
 
-        <h1 className="max-w-lg truncate text-xl font-bold text-foreground">
-          {document.title}
-        </h1>
+      {/* 2. AREA PDF (Tengah) */}
+      <div className="flex-1 relative overflow-auto flex justify-center bg-slate-200/50 p-4" ref={containerRef}>
+        
+        {loading && (
+             <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-20">
+                <Loader2 className="h-16 w-16 animate-spin text-[#0F4C81] mb-4" />
+                <p className="text-xl font-medium text-slate-600">Membuka Halaman...</p>
+             </div>
+        )}
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Button
-              size="lg" variant="outline" onClick={handlePrevPage}
-              disabled={currentPage <= 1}
-              className="h-14 w-14 bg-transparent"
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </Button>
+        {error ? (
+            <div className="self-center text-center">
+                <p className="text-red-500 text-xl font-bold">{error}</p>
+            </div>
+        ) : (
+            <div className="shadow-2xl border border-slate-200 bg-white self-start transition-all duration-200 ease-out origin-top">
+                <Document
+                    file={fileUrl}
+                    onLoadSuccess={onDocumentLoadSuccess}
+                    onLoadError={onDocumentLoadError}
+                    loading={null}
+                >
+                    <Page 
+                        pageNumber={pageNumber} 
+                        // Logic Zoom: Tinggi Dasar x Skala Zoom
+                        height={basePageHeight * scale} 
+                        renderTextLayer={false}
+                        renderAnnotationLayer={false}
+                        className="bg-white"
+                    />
+                </Document>
+            </div>
+        )}
+      </div>
+
+      {/* 3. FOOTER NAVIGASI (The Control Center) */}
+      <div className="bg-white border-t border-slate-200 px-4 py-3 shrink-0 z-20 shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
+        <div className="flex items-center justify-between gap-4">
             
-            <div className="flex min-w-[120px] items-center justify-center rounded-lg bg-muted px-4 py-3">
-              <span className="text-lg font-bold">
-                {totalPages > 0 ? `${currentPage} / ${totalPages}` : "..."}
-              </span>
+            {/* ZONA KIRI: ZOOM & DOWNLOAD */}
+            <div className="flex items-center gap-2">
+                {/* Tombol Zoom */}
+                <div className="flex items-center bg-slate-100 rounded-xl p-1 border border-slate-200">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-12 w-12 rounded-lg hover:bg-white hover:shadow-sm"
+                        onClick={handleZoomOut}
+                        disabled={scale <= 1.0}
+                    >
+                        <ZoomOut className="h-6 w-6 text-slate-600" />
+                    </Button>
+                    <span className="w-12 text-center font-bold text-slate-600 text-sm">
+                        {Math.round(scale * 100)}%
+                    </span>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-12 w-12 rounded-lg hover:bg-white hover:shadow-sm"
+                        onClick={handleZoomIn}
+                        disabled={scale >= 2.0}
+                    >
+                        <ZoomIn className="h-6 w-6 text-slate-600" />
+                    </Button>
+                </div>
+
+                {/* Tombol QR Download */}
+                <Button 
+                    className="h-14 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold gap-2 shadow-sm"
+                    onClick={handleQrDownload}
+                >
+                    <QrCode className="h-6 w-6" />
+                    <span className="hidden xl:inline">AMBIL FILE</span>
+                </Button>
             </div>
 
-            <Button
-              size="lg" variant="outline" onClick={handleNextPage}
-              disabled={currentPage >= totalPages}
-              className="h-14 w-14 bg-transparent"
-            >
-              <ChevronRight className="h-6 w-6" />
-            </Button>
-          </div>
+            {/* ZONA TENGAH: NAVIGASI HALAMAN (Paling Besar) */}
+            <div className="flex items-center gap-3 flex-1 justify-center max-w-3xl">
+                <Button
+                    size="lg"
+                    className="h-14 px-6 xl:px-8 text-base xl:text-lg font-bold rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 hover:text-slate-900 active:scale-95 transition-all flex-1 max-w-[200px]"
+                    onClick={() => setPageNumber((prev) => Math.max(prev - 1, 1))}
+                    disabled={pageNumber <= 1 || loading}
+                >
+                    <ChevronLeft className="h-6 w-6 mr-1" />
+                    SEBELUMNYA
+                </Button>
 
-          <Button
-            size="lg" variant="secondary" onClick={() => setShowQrModal(true)}
-            className="h-14 gap-2 px-6 text-lg font-semibold"
-          >
-            <QrCode className="h-5 w-5" /> Unduh via HP
-          </Button>
+                <div className="flex flex-col items-center px-4 min-w-[100px]">
+                    <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">HALAMAN</span>
+                    <span className="text-3xl font-black text-slate-800 tabular-nums">
+                        {loading ? "-" : pageNumber}<span className="text-lg text-slate-400 font-normal">/{numPages}</span>
+                    </span>
+                </div>
+
+                <Button
+                    size="lg"
+                    className="h-14 px-6 xl:px-8 text-base xl:text-lg font-bold rounded-xl bg-[#0F4C81] hover:bg-[#0b3d69] text-white shadow-md hover:shadow-lg active:scale-95 transition-all flex-1 max-w-[200px]"
+                    onClick={() => setPageNumber((prev) => Math.min(prev + 1, numPages))}
+                    disabled={pageNumber >= numPages || loading}
+                >
+                    SELANJUTNYA
+                    <ChevronRight className="h-6 w-6 ml-1" />
+                </Button>
+            </div>
+
+            {/* ZONA KANAN: Spacer agar tengah seimbang (Hidden di mobile) */}
+            <div className="hidden lg:block w-[280px]"></div>
+
         </div>
-      </header>
-
-      {/* --- MAIN CONTENT AREA --- */}
-      <main className="relative flex flex-1 items-center justify-center p-8 overflow-hidden bg-gray-900/50">
-        
-        {/* Container untuk Canvas (sebagai pengganti iframe) */}
-        <div 
-            ref={containerRef}
-            className="relative h-full w-full max-w-5xl flex items-center justify-center rounded-lg shadow-2xl overflow-hidden"
-        >
-            {/* Loading Indicator */}
-            {isLoading && (
-                 <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/50 text-white backdrop-blur-sm">
-                    <Loader2 className="h-16 w-16 animate-spin" />
-                    <p className="mt-4 text-xl font-medium">Memuat halaman...</p>
-                 </div>
-            )}
-
-            {/* Canvas Render */}
-            <canvas 
-                ref={canvasRef} 
-                className="block shadow-lg rounded bg-white"
-            />
-        </div>
-
-        {/* Touch Navigation Overlay (Tombol Besar Kiri/Kanan) */}
-        {!isLoading && totalPages > 0 && (
-          <>
-            <button
-              type="button" onClick={handlePrevPage} disabled={currentPage <= 1}
-              className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-card/80 p-4 shadow-lg backdrop-blur-sm transition-all hover:bg-card disabled:opacity-30 z-10"
-            >
-              <ChevronLeft className="h-10 w-10 text-foreground" />
-            </button>
-            <button
-              type="button" onClick={handleNextPage} disabled={currentPage >= totalPages}
-              className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-card/80 p-4 shadow-lg backdrop-blur-sm transition-all hover:bg-card disabled:opacity-30 z-10"
-            >
-              <ChevronRight className="h-10 w-10 text-foreground" />
-            </button>
-          </>
-        )}
-      </main>
-
-      {/* QR Modal (Tetap sama) */}
-      {showQrModal && (
-        <QrDownloadModal
-          documentTitle={document.title}
-          downloadUrl={downloadUrl}
-          onClose={() => setShowQrModal(false)}
-        />
-      )}
-    </div>
-  )
-}
-
-function QrDownloadModal({
-  documentTitle,
-  downloadUrl,
-  onClose,
-}: {
-  documentTitle: string
-  downloadUrl: string
-  onClose: () => void
-}) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-
-  useEffect(() => {
-    if (canvasRef.current) {
-      const canvas = canvasRef.current
-      const ctx = canvas.getContext("2d")
-      if (ctx) {
-        const size = 280
-        const moduleCount = 25
-        const moduleSize = size / moduleCount
-
-        canvas.width = size
-        canvas.height = size
-
-        ctx.fillStyle = "#ffffff"
-        ctx.fillRect(0, 0, size, size)
-
-        ctx.fillStyle = "#1e3a5f"
-        const urlHash = downloadUrl
-          .split("")
-          .reduce((acc, char) => acc + char.charCodeAt(0), 0)
-
-        for (let row = 0; row < moduleCount; row++) {
-          for (let col = 0; col < moduleCount; col++) {
-            const isCorner =
-              (row < 7 && col < 7) ||
-              (row < 7 && col >= moduleCount - 7) ||
-              (row >= moduleCount - 7 && col < 7)
-            const isTiming = (row === 6 || col === 6) && !isCorner
-            const shouldFill = isCorner
-              ? row < 7 && col < 7
-                ? row === 0 || row === 6 || col === 0 || col === 6 || (row >= 2 && row <= 4 && col >= 2 && col <= 4)
-                : row < 7 && col >= moduleCount - 7
-                  ? row === 0 || row === 6 || col === moduleCount - 1 || col === moduleCount - 7 || (row >= 2 && row <= 4 && col >= moduleCount - 5 && col <= moduleCount - 3)
-                  : row === moduleCount - 1 || row === moduleCount - 7 || col === 0 || col === 6 || (row >= moduleCount - 5 && row <= moduleCount - 3 && col >= 2 && col <= 4)
-              : isTiming ? (row + col) % 2 === 0 : ((row * col + urlHash) % 3) < 2
-            if (shouldFill) {
-              ctx.fillRect(col * moduleSize, row * moduleSize, moduleSize, moduleSize)
-            }
-          }
-        }
-      }
-    }
-  }, [downloadUrl])
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/80 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg rounded-3xl bg-card p-10 shadow-2xl">
-        <Button size="lg" variant="ghost" onClick={onClose} className="absolute right-4 top-4 h-14 w-14 rounded-full">
-          <X className="h-8 w-8" />
-        </Button>
-        <div className="text-center">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Smartphone className="h-8 w-8 text-primary" />
-          </div>
-          <h2 className="text-2xl font-bold text-foreground">Unduh Dokumen</h2>
-          <p className="mt-2 text-muted-foreground">{documentTitle}</p>
-        </div>
-        <div className="mt-8 flex justify-center">
-          <div className="rounded-2xl border-4 border-primary/20 bg-card p-4">
-            <canvas ref={canvasRef} className="h-[280px] w-[280px]" />
-          </div>
-        </div>
-        <p className="mt-6 text-center text-base text-muted-foreground">Scan QR Code dengan HP untuk mengunduh dokumen</p>
-        <div className="mt-4 rounded-xl bg-muted/50 p-3 text-center">
-          <p className="break-all font-mono text-sm text-primary">{downloadUrl}</p>
-        </div>
-        <Button size="lg" onClick={onClose} className="mt-8 h-14 w-full text-xl font-semibold">Tutup</Button>
       </div>
     </div>
   )
