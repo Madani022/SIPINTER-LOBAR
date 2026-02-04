@@ -14,7 +14,13 @@ export function NavigationBar({ title, showBack = false }: NavigationBarProps) {
   const { goHome, goBack } = useKiosk()
 
   return (
-    <header className="flex items-center justify-between border-b border-border bg-primary px-4 py-3 lg:px-8 lg:py-4">
+    // PERUBAHAN POSISI: 
+    // 1. fixed bottom-0: Menempel di bawah
+    // 2. border-t: Garis batas pindah ke atas
+    // 3. z-50: Pastikan selalu di atas konten lain
+    <footer className="fixed bottom-0 left-0 z-50 w-full flex items-center justify-between border-t border-border bg-primary px-4 py-3 lg:px-8 lg:py-4">
+      
+      {/* BAGIAN KIRI (TIDAK BERUBAH) */}
       <div className="flex items-center gap-2 lg:gap-4">
         {showBack && (
           <Button
@@ -29,6 +35,8 @@ export function NavigationBar({ title, showBack = false }: NavigationBarProps) {
         )}
         <h1 className="line-clamp-1 text-base font-bold text-primary-foreground lg:text-2xl">{title}</h1>
       </div>
+
+      {/* BAGIAN KANAN (TIDAK BERUBAH) */}
       <div className="flex items-center gap-2 lg:gap-4">
         <StatusIndicator />
         <Button
@@ -41,6 +49,6 @@ export function NavigationBar({ title, showBack = false }: NavigationBarProps) {
           <span className="hidden sm:inline">Beranda</span>
         </Button>
       </div>
-    </header>
+    </footer>
   )
 }

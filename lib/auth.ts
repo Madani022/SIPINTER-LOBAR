@@ -1,33 +1,27 @@
 import { cookies } from "next/headers"
-import { prisma } from "@/lib/prisma" // Opsional, jika mau cek user exist
 
+/**
+ * Fungsi SATPAM: Cek apakah user punya tiket masuk
+ * Dipakai di: Halaman Admin, Upload Dokumen, Server Actions
+ */
 export async function isAuthenticated() {
+  // --- PERBAIKAN: Tambahkan 'await' di sini ---
   const cookieStore = await cookies()
   
-  // 1. Ambil cookie yang kita set saat Login
+  // Ambil cookie
   const session = cookieStore.get("admin_session")
 
-  // 2. Jika tidak ada cookie, berarti belum login
-  if (!session || !session.value) {
-    return false
-  }
-
-  // 3. (Opsional & Lebih Aman) Cek apakah ID user di cookie benar-benar ada di DB
-  // Kalau mau simpel (tanpa cek DB tiap request), cukup return true di sini.
-  try {
-    const user = await prisma.adminUser.findUnique({
-      where: { id: session.value, isActive: true }
-    })
-    
-    return !!user // True jika user ketemu, False jika tidak
-  } catch (error) {
-    console.error("Auth check error:", error)
-    return false
-  }
+  // Kalau ada cookie, return true
+  return !!session
 }
 
-// Biarkan fungsi login ini kosong atau hapus saja, 
-// karena kita sekarang pakai API Route (/api/auth/login) untuk login.
-export async function login() {
-  return { success: false, error: "Please use API route for login" }
+/**
+ * Fungsi TAMBAHAN: Ambil data user dari session (Opsional)
+ */
+export async function getSession() {
+  // --- PERBAIKAN: Tambahkan 'await' di sini juga ---
+  const cookieStore = await cookies()
+  
+  const session = cookieStore.get("admin_session")
+  return session?.value // Mengembalikan User ID
 }

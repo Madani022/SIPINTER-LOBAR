@@ -1,10 +1,8 @@
 // Prisma Schema untuk DPMPTSP Kiosk System
 // Database: MySQL
-// Prisma 6/7
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -13,7 +11,7 @@ datasource db {
 }
 
 // ===========================================
-// AUTHENTICATION (Ditambahkan untuk Seed)
+// AUTHENTICATION (Admin Login)
 // ===========================================
 
 model AdminUser {
@@ -33,7 +31,7 @@ model AdminUser {
 model Category {
   id          String     @id @default(cuid())
   name        String     @unique
-  slug        String     @unique
+  slug        String     @unique // <--- INI KUNCINYA
   description String?    @db.Text
   icon        String?
   order       Int        @default(0)
@@ -44,30 +42,29 @@ model Category {
 }
 
 model Document {
-  id            String   @id @default(cuid())
+  id            String         @id @default(cuid())
   title         String
-  slug          String   @unique
-  description   String?  @db.Text
+  slug          String         @unique
+  description   String?        @db.Text
   categoryId    String
-  category      Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  filePath      String   @db.Text
+  category      Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  filePath      String         @db.Text // Lokasi file (/uploads/...)
   fileSize      Int
-  qrCode        String?  @db.Text
-  downloadUrl   String?  @db.Text
-  version       String   @default("1.0")
-  isActive      Boolean  @default(true)
-  isFeatured    Boolean  @default(false)
-  viewCount     Int      @default(0)
-  downloadCount Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-   
+  qrCode        String?        @db.Text
+  downloadUrl   String?        @db.Text
+  version       String         @default("1.0")
+  isActive      Boolean        @default(true)
+  isFeatured    Boolean        @default(false)
+  viewCount     Int            @default(0)
+  downloadCount Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
   // Relations
   stats         DocumentStat[]
-   
+  
   @@index([categoryId])
   @@index([isActive])
-  @@index([isFeatured])
 }
 
 // ===========================================
@@ -80,12 +77,9 @@ model DocumentStat {
   document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
   action     String   // "view", "download", "qr_scan"
   ipAddress  String?
-  userAgent  String?  @db.Text
-  sessionId  String?
   createdAt  DateTime @default(now())
-   
+  
   @@index([documentId])
-  @@index([action])
   @@index([createdAt])
 }
 
@@ -98,7 +92,7 @@ model DailyStat {
   uniqueVisitors Int      @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-   
+  
   @@index([date])
 }
 
@@ -110,36 +104,25 @@ model KioskSession {
   pageViews       Int       @default(0)
   documentsViewed Int       @default(0)
   lastActivity    DateTime  @default(now())
-   
+  
   @@index([startedAt])
 }
 
-// ===========================================
-// SYNC MANAGEMENT
-// ===========================================
-
 model SyncLog {
   id           String    @id @default(cuid())
-  syncType     String    // "full", "incremental", "documents", "stats"
-  status       String    // "pending", "in_progress", "completed", "failed"
+  syncType     String
+  status       String
   recordsSync  Int       @default(0)
   errorMessage String?   @db.Text
   startedAt    DateTime  @default(now())
   completedAt  DateTime?
-   
-  @@index([status])
-  @@index([startedAt])
 }
-
-// ===========================================
-// SYSTEM SETTINGS
-// ===========================================
 
 model Setting {
   id        String   @id @default(cuid())
   key       String   @unique
   value     String   @db.Text
-  type      String   @default("string") // "string", "number", "boolean", "json"
+  type      String   @default("string")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

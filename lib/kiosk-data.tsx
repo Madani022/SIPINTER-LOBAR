@@ -17,6 +17,7 @@ export const menuItems: MenuItem[] = [
         content: {
           type: "text",
           title: "Tentang DPMPTSP",
+          imageUrl: "/logoSipinterLobar.png",
           text: "Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu sebagai penyelenggara urusan penanaman modal dan pelayanan perizinan di Kabupaten Lombok Barat. Berupaya memberikan pelayanan optimal kepada masyarakat dengan menerapkan sistem pelayanan terpadu secara prima guna memberikan kemudahan, kecepatan, dan transparansi. Sehingga Pelayanan berorientasi pada kepuasan masyarakat pencari izin (Customer Satisfaction)."
         }
       },
@@ -72,15 +73,18 @@ export const menuItems: MenuItem[] = [
           ]
         }
       },
-      { 
+      {
         id: "struktur", 
         title: "Struktur Organisasi", 
         description: "Bagan organisasi", 
         icon: "Users",
-        // PENTING: Struktur Org biasanya 1 Gambar/PDF.
-        // Jika ingin PDF dinamis, ubah jadi hasDocuments: true dan beri categorySlug "struktur"
-        hasDocuments: true, 
-        categorySlug: "struktur"
+        // UBAH BAGIAN INI:
+        hasContent: true, // Aktifkan mode konten
+        content: {
+          type: "image", // Tipe baru khusus gambar
+          title: "Struktur Organisasi",
+          imageUrl: "/struktur-organisasi-fix.png"
+        }
       },
       { 
         id: "pejabat", 
@@ -214,13 +218,18 @@ export const menuItems: MenuItem[] = [
           type: "points",
           title: "Daftar Layanan MPP",
           points: [
-            "Layanan Kependudukan (KTP, KK, Akta)",
-            "Layanan Perizinan Usaha (OSS, NIB)",
-            "Layanan Pertanahan (Sertifikat, IMB)",
-            "Layanan Kesehatan (BPJS, Rujukan)",
-            "Layanan Ketenagakerjaan (AK1, BPJS TK)",
-            "Layanan Pajak Daerah",
-            "Layanan Informasi Investasi"
+            "Industri dan Perdagangan (Disperindag)",
+            "Kesehatan (Dikes)",
+            "Lingkungan Hidup (Dinas LH)",
+            "Dinas PUTR",
+            "Perhubungan (Dishub)",
+            "Pariwisata (Dispar)",
+            "Koperasi (Diskop)",
+            "Tenaga Kerja (Disnaker)",
+            "Kelautan dan Perikanan (Dislutkan)",
+            "Pertanian dan Pangan (DKPP)",
+            "Pendidikan dan Kebudayaan (Dikbud)",
+            "BPJS Ketenagakerjaan (BPJS TK)"
           ]
         }
       },
@@ -250,12 +259,12 @@ export const menuItems: MenuItem[] = [
           type: "points",
           title: "Alur Pelayanan MPP",
           points: [
-            "1. Pengambilan Nomor Antrian di Loket Informasi",
-            "2. Verifikasi Kelengkapan Berkas",
-            "3. Pengajuan Permohonan di Loket Tujuan",
-            "4. Proses Verifikasi dan Validasi Data",
-            "5. Pembayaran Retribusi (jika ada)",
-            "6. Pengambilan Dokumen di Loket Pengambilan"
+            "Pengambilan Nomor Antrian di Loket Informasi",
+            "Verifikasi Kelengkapan Berkas",
+            "Pengajuan Permohonan di Loket Tujuan",
+            "Proses Verifikasi dan Validasi Data",
+            "Pembayaran Retribusi (jika ada)",
+            "Pengambilan Dokumen di Loket Pengambilan"
           ]
         }
       },

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { menuItems } from "@/lib/kiosk-data"
 import * as LucideIcons from "lucide-react"
 
-// Helper Icon
+// ... (Helper DynamicIcon tetap sama) ...
 const DynamicIcon = ({ name, className }: { name: string | any; className?: string }) => {
   if (!name) return <LucideIcons.HelpCircle className={className} />
   if (typeof name === 'string') {
@@ -31,7 +31,6 @@ export function SubmenuScreen({ menuId, menuTitle }: SubmenuScreenProps) {
   const items = parentMenu.submenu
   const count = items.length
 
-  // === LOGIKA FILL SCREEN ===
   const getResponsiveGridClass = () => {
     if (count <= 3) return "grid-cols-3 grid-rows-1"
     if (count === 4) return "grid-cols-2 grid-rows-2"
@@ -43,18 +42,14 @@ export function SubmenuScreen({ menuId, menuTitle }: SubmenuScreenProps) {
   const isGiantCard = count <= 3
 
   return (
-    <div className="flex h-full flex-col bg-slate-50">
-      {/* Navbar Konsisten */}
-      <NavigationBar title={menuTitle} showBack={true} />
-
-      {/* CONTAINER UTAMA */}
-      <div className="flex-1 overflow-hidden p-8">
+    <div className="flex h-screen w-full flex-col bg-slate-50">
+      {/* PERUBAHAN PENTING DISINI:
+         1. Hapus NavigationBar dari atas (Posisi di kode tidak masalah karena Fixed, tapi semantic lebih baik di bawah)
+         2. Tambahkan 'pb-24 lg:pb-32' pada container ini agar konten tidak nabrak Navbar bawah
+      */}
+      <div className="flex-1 overflow-hidden p-8 pb-24 lg:pb-32">
         
-        {/* GRID CONTAINER */}
-        <div className={cn(
-           "grid h-full w-full gap-8", 
-           getResponsiveGridClass()
-        )}>
+        <div className={cn("grid h-full w-full gap-8", getResponsiveGridClass())}>
           {items.map((item) => (
             <Card
               key={item.id}
@@ -70,52 +65,23 @@ export function SubmenuScreen({ menuId, menuTitle }: SubmenuScreenProps) {
                 }
               }}
               className={cn(
-                // === STYLE CARD ===
                 "group relative flex cursor-pointer flex-col items-center justify-center p-6 text-center",
-                "bg-white shadow-sm",
-                
-                // === PERUBAHAN DISINI (Border Tipis) ===
-                "border border-slate-200", // Border tipis 1px (Hairline)
-                "hover:border-[#0F4C81]",  // Saat disentuh jadi biru
-                
-                // Radius (Tidak terlalu melengkung)
-                "rounded-2xl", 
-                
-                // Full Size
-                "h-full w-full",
-
-                // Efek Animasi
-                "transition-all duration-300 ease-out", 
-                "hover:scale-[1.02]", 
-                "hover:shadow-xl",    
-                "active:scale-[0.98]" 
+                "bg-white shadow-sm border border-slate-200 hover:border-[#0F4C81]",
+                "rounded-2xl h-full w-full transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-xl active:scale-[0.98]"
               )}
             >
-              {/* ICON CONTAINER */}
               <div className={cn(
                 "flex items-center justify-center rounded-xl transition-colors duration-300",
                 "bg-slate-100 text-slate-700 group-hover:bg-[#0F4C81] group-hover:text-white",
                 isGiantCard ? "mb-6 h-36 w-36" : "mb-4 h-24 w-24"
               )}>
-                <DynamicIcon 
-                   name={item.icon} 
-                   className={isGiantCard ? "h-16 w-16" : "h-10 w-10"} 
-                />
+                <DynamicIcon name={item.icon} className={isGiantCard ? "h-16 w-16" : "h-10 w-10"} />
               </div>
-
-              {/* CONTENT TEXT */}
               <div className="w-full space-y-2 px-4">
-                <h3 className={cn(
-                  "font-bold leading-tight text-slate-800",
-                  isGiantCard ? "text-4xl" : "text-2xl"
-                )}>
+                <h3 className={cn("font-bold leading-tight text-slate-800", isGiantCard ? "text-4xl" : "text-2xl")}>
                   {item.title}
                 </h3>
-
-                <p className={cn(
-                  "text-slate-400 line-clamp-2", 
-                  isGiantCard ? "text-xl" : "text-base"
-                )}>
+                <p className={cn("text-slate-400 line-clamp-2", isGiantCard ? "text-xl" : "text-base")}>
                   {item.description}
                 </p>
               </div>
@@ -123,6 +89,9 @@ export function SubmenuScreen({ menuId, menuTitle }: SubmenuScreenProps) {
           ))}
         </div>
       </div>
+
+      {/* Navbar Fixed di Bawah */}
+      <NavigationBar title={menuTitle} showBack={true} />
     </div>
   )
 }

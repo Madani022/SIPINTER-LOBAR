@@ -1,49 +1,41 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
-const SESSION_NAME = "kiosk_admin_session"
-
-// Routes that require authentication
-const protectedRoutes = ["/admin/dashboard", "/admin/documents", "/admin/settings", "/admin/sync"]
-
-// Routes that should redirect to dashboard if already authenticated
-const authRoutes = ["/admin/login"]
-
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-  const sessionCookie = request.cookies.get(SESSION_NAME)
+  // Ambil cookie "admin_session"
+  const session = request.cookies.get("admin_session")?.value
+  const pathname = request.nextUrl.pathname
 
-  // Check if session exists and is valid
-  let isAuthenticated = false
-  if (sessionCookie?.value) {
-    try {
-      const session = JSON.parse(sessionCookie.value)
-      isAuthenticated = session.expiresAt > Date.now()
-    } catch {
-      isAuthenticated = false
-    }
+  // Cek apakah user sedang di halaman login
+  const isLoginPage = pathname === "/admin/login"
+  
+  // Cek apakah user mencoba masuk area admin (selain login)
+  const isProtectedPath = pathname.startsWith("/admin") && !isLoginPage
+
+  // 1. BELUM LOGIN, TAPI MAKSA MASUK DASHBOARD -> TENDANG KE LOGIN
+  if (isProtectedPath && !session) {
+    // Redirect ke login
+    return NextResponse.redirect(new URL("/admin/login", request.url))
   }
 
-  // Redirect authenticated users away from auth routes
-  if (authRoutes.some((route) => pathname.startsWith(route))) {
-    if (isAuthenticated) {
-      return NextResponse.redirect(new URL("/admin/dashboard", request.url))
-    }
-    return NextResponse.next()
+  // 2. SUDAH LOGIN, TAPI BUKA HALAMAN LOGIN LAGI -> LEMPAR KE DASHBOARD
+  if (isLoginPage && session) {
+    return NextResponse.redirect(new URL("/admin/dashboard", request.url))
   }
-
-  // Protect admin routes
-  if (protectedRoutes.some((route) => pathname.startsWith(route))) {
-    if (!isAuthenticated) {
-      const loginUrl = new URL("/admin/login", request.url)
-      loginUrl.searchParams.set("callbackUrl", pathname)
-      return NextResponse.redirect(loginUrl)
+  
+  // 3. ISENG BUKA "/admin" SAJA -> ARAHKAN SESUAI STATUS
+  if (pathname === "/admin") {
+    if (session) {
+        return NextResponse.redirect(new URL("/admin/dashboard", request.url))
+    } else {
+        return NextResponse.redirect(new URL("/admin/login", request.url))
     }
   }
 
   return NextResponse.next()
 }
 
+// Terapkan hanya pada route yang diawali /admin
 export const config = {
   matcher: ["/admin/:path*"],
 }

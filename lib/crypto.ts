@@ -1,7 +1,18 @@
-// FILE: lib/crypto.ts
-import * as crypto from "crypto"
+import { createHash } from "crypto"
 
+/**
+ * Mengubah password teks biasa menjadi hash SHA-256
+ * (Digunakan saat Register atau Seeding)
+ */
 export function hashPassword(password: string): string {
-  // Ini fungsi untuk menyamakan password login dengan password di database
-  return crypto.createHash("sha256").update(password).digest("hex")
+  return createHash("sha256").update(password).digest("hex")
+}
+
+/**
+ * Memverifikasi apakah password input cocok dengan hash di database
+ * (Digunakan saat Login)
+ */
+export function verifyPassword(plainPassword: string, savedHash: string): boolean {
+  const hashedInput = hashPassword(plainPassword)
+  return hashedInput === savedHash
 }

@@ -3,91 +3,78 @@ import * as crypto from "crypto"
 
 const prisma = new PrismaClient()
 
+// Fungsi Hash Password (Langsung disini biar gak error import)
 function hashPassword(password: string): string {
   return crypto.createHash("sha256").update(password).digest("hex")
 }
 
 async function main() {
-  console.log("🚀 Starting database seeding...")
+  console.log("🚀 Memulai restore database...")
 
-  // 1. Setup Admin
-  console.log("👤 Syncing admin user...")
+  // 1. RESET PASSWORD ADMIN (lobar123)
+  console.log("👤 Membuat akun admin...")
+  const passwordAdmin = hashPassword("lobar123")
+  
   await prisma.adminUser.upsert({
     where: { username: "admin" },
-    update: {},
+    update: { passwordHash: passwordAdmin }, // Paksa update password
     create: {
       username: "admin",
-      passwordHash: hashPassword("lobar123"),
+      passwordHash: passwordAdmin,
       email: "admin@dpmptsp-lobar.go.id",
       isActive: true,
     },
   })
 
-  // 2. Setup Kategori (SESUAIKAN DENGAN KIOSK-DATA.TS)
-  // Slug di sini HARUS sama persis dengan categorySlug di lib/kiosk-data.ts
-  console.log("📁 Syncing categories...")
+  // 2. BUAT KATEGORI (Sesuai Menu Kiosk)
+  console.log("📁 Membuat kategori...")
+  
   const categories = [
-    // --- Layanan Perizinan ---
-    { name: "Standar Pelayanan", slug: "standar-pelayanan", icon: "FileText", description: "Dokumen SP Perizinan" },
-    { name: "SOP Perizinan", slug: "sop", icon: "FileCheck", description: "Dokumen SOP" },
+    // --- LAYANAN PERIZINAN ---
+    { name: "Standar Pelayanan", slug: "standar-pelayanan", icon: "FileText", order: 1 },
+    { name: "SOP Perizinan", slug: "sop", icon: "FileCheck", order: 2 },
+    { name: "SP dan SOP (Gabungan)", slug: "sp-sop", icon: "Shield", order: 3 }, 
+
+    // --- PENANAMAN MODAL ---
+    { name: "IPRO (Investasi)", slug: "ipro", icon: "Award", order: 4 },
+    { name: "LKPM", slug: "lkpm", icon: "FileSpreadsheet", order: 5 },
+
+    // --- TATA RUANG ---
+    { name: "Dokumen RDTR", slug: "rdtr-dokumen", icon: "FileText", order: 6 },
+    { name: "Pedoman KRK", slug: "pedoman", icon: "BookOpen", order: 7 },
+
+    // --- MPP & INFORMASI PUBLIK ---
+    { name: "Regulasi MPP", slug: "regulasi-mpp", icon: "Scale", order: 8 },
+    { name: "Persyaratan Umum", slug: "persyaratan-umum", icon: "ScrollText", order: 9 },
+    { name: "Struktur Organisasi", slug: "struktur", icon: "Users", order: 10 },
+    { name: "Regulasi / Perda", slug: "regulasi", icon: "Scale", order: 11 },
+    { name: "Formulir", slug: "formulir", icon: "FileInput", order: 12 },
     
-    // --- Penanaman Modal ---
-    { name: "IPRO (Investasi)", slug: "ipro", icon: "Award", description: "Investment Project Ready to Offer" },
-    { name: "LKPM", slug: "lkpm", icon: "FileSpreadsheet", description: "Laporan Kegiatan Penanaman Modal" },
-    
-    // --- Perizinan (Menu Lain) ---
-    { name: "SP dan SOP", slug: "sp-sop", icon: "Shield", description: "Gabungan SP & SOP" },
-    
-    // --- Informasi Publik ---
-    { name: "Struktur Organisasi", slug: "struktur", icon: "Users", description: "Bagan Struktur Organisasi" },
-    { name: "Regulasi / Perda", slug: "regulasi", icon: "Scale", description: "Produk Hukum Daerah" },
-    
-    // --- Tata Ruang ---
-    { name: "Pedoman KRK", slug: "pedoman", icon: "BookOpen", description: "Panduan KRK" },
-    { name: "Dokumen RDTR", slug: "rdtr-dokumen", icon: "FileText", description: "Rencana Detail Tata Ruang" },
-    
-    // --- MPP ---
-    { name: "Formulir MPP", slug: "formulir", icon: "FileInput", description: "Formulir Layanan" },
-    { name: "Regulasi MPP", slug: "regulasi-mpp", icon: "Scale", description: "Regulasi Mal Pelayanan Publik" },
-    { name: "Persyaratan Umum", slug: "persyaratan-umum", icon: "ScrollText", description: "Persyaratan Dasar" },
+    // --- LAINNYA ---
+    { name: "Surat Edaran", slug: "surat-edaran", icon: "Mail", order: 13 },
   ]
 
   for (const cat of categories) {
     await prisma.category.upsert({
       where: { slug: cat.slug },
-      update: { name: cat.name, icon: cat.icon, description: cat.description }, // Update jika nama berubah
+      update: { name: cat.name, icon: cat.icon }, 
       create: {
         name: cat.name,
         slug: cat.slug,
-        description: cat.description,
+        description: `Kategori dokumen untuk ${cat.name}`,
         icon: cat.icon,
-        order: 0,
+        order: cat.order,
         isActive: true,
       },
     })
   }
-  console.log("✅ Categories synced successfully")
-
-  // 3. Settings Default
-  const settings = [
-    { key: "kiosk_name", value: "SIPINTER Kab. Lombok Barat", type: "string" },
-    { key: "running_text", value: "Selamat Datang di Mal Pelayanan Publik Kabupaten Lombok Barat", type: "string" },
-  ]
-
-  for (const setting of settings) {
-    await prisma.setting.upsert({
-      where: { key: setting.key },
-      update: {},
-      create: setting,
-    })
-  }
-
-  console.log("\n🎉 Database seeding completed! Ready to use.")
+  
+  console.log("✅ Database berhasil dipulihkan!")
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Error:", e)
+    console.error("❌ Error seeding:", e)
     process.exit(1)
   })
   .finally(async () => {
