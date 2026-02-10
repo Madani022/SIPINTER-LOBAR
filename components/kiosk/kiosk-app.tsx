@@ -74,6 +74,7 @@ function KioskScreens() {
         <SectorDetailScreen
           sectorId={currentScreen.sectorId}
           sectorTitle={currentScreen.sectorTitle}
+          categorySlug={currentScreen.categorySlug}
         />
       )
       

@@ -53,11 +53,21 @@ export function PDFViewerScreen({ document }: PDFViewerScreenProps) {
     setError("Gagal memuat dokumen.")
   }
 
+  // ✅ INI PERUBAHANNYA: LOGIKA SMART LINK
   const handleQrDownload = () => {
+    // 1. Ambil Base URL (biar link lokal jadi http://192.168... bukan cuma /uploads/...)
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    
+    // 2. Prioritas: Link GDrive (downloadUrl) > Link Lokal (fileUrl)
+    const finalUrl = document.downloadUrl 
+        ? document.downloadUrl 
+        : `${origin}${fileUrl}`
+
+    // 3. Kirim link yang benar ke QR Page
     navigateTo({
         type: "qr-page",
         title: "Download Dokumen",
-        url: fileUrl,
+        url: finalUrl, // <--- Link ini yang akan jadi QR Code
         description: `Scan QR Code ini untuk mengunduh dokumen "${document.title}" ke HP Anda.`
     })
   }
@@ -190,10 +200,10 @@ export function PDFViewerScreen({ document }: PDFViewerScreenProps) {
                 <Button 
                     variant="outline" 
                     className="h-14 px-6 border-2 border-emerald-100 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-200 rounded-xl font-bold gap-3 transition-colors"
-                    onClick={handleQrDownload}
+                    onClick={handleQrDownload} // ✅ FUNGSI BARU DIPANGGIL DISINI
                 >
                     <QrCode className="h-6 w-6" />
-                    <span className="text-lg">AMBIL FILE</span>
+                    <span className="text-lg">UNDUH FILE</span>
                 </Button>
             </div>
 

@@ -1,12 +1,12 @@
 import type { MenuItem, SubMenuItem, DocumentItem, SectorItem } from "@/components/kiosk/kiosk-provider"
 
-// --- DATA MENU STATIS DENGAN KONEKSI DB (SLUG) ---
+// --- DATA MENU UTAMA (STATIS) ---
 export const menuItems: MenuItem[] = [
   {
     id: "profil",
     title: "Profil DPMPTSP",
     description: "Informasi tentang instansi",
-    icon: "Building2", // Ubah jadi String
+    icon: "Building2",
     submenu: [
       { 
         id: "tentang", 
@@ -23,7 +23,7 @@ export const menuItems: MenuItem[] = [
       },
       { 
         id: "profil-instansi", 
-        title: "Profil DPMPTSP", 
+        title: "Profil Instansi", 
         description: "Alamat, jam layanan, kontak", 
         icon: "Building2",
         hasContent: true,
@@ -78,10 +78,9 @@ export const menuItems: MenuItem[] = [
         title: "Struktur Organisasi", 
         description: "Bagan organisasi", 
         icon: "Users",
-        // UBAH BAGIAN INI:
-        hasContent: true, // Aktifkan mode konten
+        hasContent: true, 
         content: {
-          type: "image", // Tipe baru khusus gambar
+          type: "image", 
           title: "Struktur Organisasi",
           imageUrl: "/struktur-organisasi-fix.png"
         }
@@ -127,7 +126,7 @@ export const menuItems: MenuItem[] = [
         description: "Investment Project Ready to Offer", 
         icon: "Award",
         hasDocuments: true,
-        categorySlug: "ipro" // <--- CONNECT KE DB
+        categorySlug: "ipro"
       },
       { 
         id: "lkpm", 
@@ -135,7 +134,7 @@ export const menuItems: MenuItem[] = [
         description: "Laporan Kegiatan Penanaman Modal", 
         icon: "FileSpreadsheet",
         hasDocuments: true,
-        categorySlug: "lkpm" // <--- CONNECT KE DB
+        categorySlug: "lkpm"
       },
     ]
   },
@@ -151,7 +150,7 @@ export const menuItems: MenuItem[] = [
         description: "Standar Pelayanan & SOP", 
         icon: "Shield",
         hasDocuments: true,
-        categorySlug: "sop" // <--- CONNECT KE DB
+        categorySlug: "sop"
       },
       { 
         id: "layanan-sektor", 
@@ -174,7 +173,7 @@ export const menuItems: MenuItem[] = [
         description: "Rencana Detail Tata Ruang", 
         icon: "FileText",
         hasDocuments: true,
-        categorySlug: "rdtr-dokumen" // <--- CONNECT KE DB
+        categorySlug: "rdtr-dokumen"
       },
       { 
         id: "rdtr-interaktif", 
@@ -239,7 +238,7 @@ export const menuItems: MenuItem[] = [
         description: "Dokumen regulasi",
         icon: "Scale",
         hasDocuments: true,
-        categorySlug: "regulasi-mpp" // <--- CONNECT KE DB
+        categorySlug: "regulasi-mpp"
       },
       { 
         id: "persyaratan-umum", 
@@ -247,7 +246,7 @@ export const menuItems: MenuItem[] = [
         description: "Dokumen persyaratan", 
         icon: "ScrollText",
         hasDocuments: true,
-        categorySlug: "persyaratan-umum" // <--- CONNECT KE DB
+        categorySlug: "persyaratan-umum"
       },
       { 
         id: "alur-pelayanan", 
@@ -298,26 +297,98 @@ export const menuItems: MenuItem[] = [
   },
 ]
 
+// --- DATA SECTORS (UPDATED DENGAN SLUG) ---
+// Pastikan kamu membuat Kategori di Database dengan slug yang sama persis!
 export const sectors: SectorItem[] = [
-  { id: "industri-perdagangan", title: "Industri dan Perdagangan", description: "Perizinan sektor industri", icon: "Factory" },
-  { id: "kesehatan", title: "Kesehatan", description: "Perizinan sektor kesehatan", icon: "HeartPulse" },
-  { id: "lingkungan", title: "Lingkungan", description: "Perizinan lingkungan hidup", icon: "Leaf" },
-  { id: "putr", title: "PUTR", description: "Pekerjaan Umum & Tata Ruang", icon: "Building" },
-  { id: "perhubungan", title: "Perhubungan", description: "Perizinan transportasi", icon: "Bus" },
-  { id: "pariwisata", title: "Pariwisata", description: "Perizinan pariwisata", icon: "Palmtree" },
-  { id: "koperasi", title: "Koperasi", description: "Perizinan koperasi & UKM", icon: "Users2" },
-  { id: "tenaga-kerja", title: "Tenaga Kerja", description: "Perizinan ketenagakerjaan", icon: "HardHat" },
-  { id: "kelautan-perikanan", title: "Kelautan dan Perikanan", description: "Perizinan kelautan", icon: "Fish" },
-  { id: "pertanian-pangan", title: "Pertanian dan Pangan", description: "Perizinan pertanian", icon: "Wheat" },
-  { id: "pendidikan-kebudayaan", title: "Pendidikan dan Kebudayaan", description: "Perizinan pendidikan", icon: "GraduationCap" },
-  { id: "bpjs-ketenagakerjaan", title: "BPJS Ketenagakerjaan", description: "Layanan BPJS TK", icon: "BadgeCheck" },
+  { 
+    id: "industri-perdagangan", 
+    title: "Industri dan Perdagangan", 
+    description: "Perizinan sektor industri", 
+    icon: "Factory",
+    categorySlug: "sektor-industri" // <--- CONNECT DB
+  },
+  { 
+    id: "kesehatan", 
+    title: "Kesehatan", 
+    description: "Perizinan sektor kesehatan", 
+    icon: "HeartPulse",
+    categorySlug: "sektor-kesehatan"
+  },
+  { 
+    id: "lingkungan", 
+    title: "Lingkungan", 
+    description: "Perizinan lingkungan hidup", 
+    icon: "Leaf",
+    categorySlug: "sektor-lingkungan"
+  },
+  { 
+    id: "putr", 
+    title: "PUTR", 
+    description: "Pekerjaan Umum & Tata Ruang", 
+    icon: "Building",
+    categorySlug: "sektor-putr"
+  },
+  { 
+    id: "perhubungan", 
+    title: "Perhubungan", 
+    description: "Perizinan transportasi", 
+    icon: "Bus",
+    categorySlug: "sektor-perhubungan"
+  },
+  { 
+    id: "pariwisata", 
+    title: "Pariwisata", 
+    description: "Perizinan pariwisata", 
+    icon: "Palmtree",
+    categorySlug: "sektor-pariwisata"
+  },
+  { 
+    id: "koperasi", 
+    title: "Koperasi", 
+    description: "Perizinan koperasi & UKM", 
+    icon: "Users2",
+    categorySlug: "sektor-koperasi"
+  },
+  { 
+    id: "tenaga-kerja", 
+    title: "Tenaga Kerja", 
+    description: "Perizinan ketenagakerjaan", 
+    icon: "HardHat",
+    categorySlug: "sektor-naker"
+  },
+  { 
+    id: "kelautan-perikanan", 
+    title: "Kelautan dan Perikanan", 
+    description: "Perizinan kelautan", 
+    icon: "Fish",
+    categorySlug: "sektor-perikanan"
+  },
+  { 
+    id: "pertanian-pangan", 
+    title: "Pertanian dan Pangan", 
+    description: "Perizinan pertanian", 
+    icon: "Wheat",
+    categorySlug: "sektor-pertanian"
+  },
+  { 
+    id: "pendidikan-kebudayaan", 
+    title: "Pendidikan dan Kebudayaan", 
+    description: "Perizinan pendidikan", 
+    icon: "GraduationCap",
+    categorySlug: "sektor-pendidikan"
+  },
+  { 
+    id: "bpjs-ketenagakerjaan", 
+    title: "BPJS Ketenagakerjaan", 
+    description: "Layanan BPJS TK", 
+    icon: "BadgeCheck",
+    categorySlug: "sektor-bpjs"
+  },
 ]
 
-// --- DATA DOCUMENTS KITA KOSONGKAN ---
-// Karena sekarang data ini diambil LIVE dari Database via Server Action.
+// --- HELPER FUNCTIONS ---
 export const documents: Record<string, DocumentItem[]> = {}
 
-// --- HELPER FUNCTIONS ---
 export function getMenuById(id: string): MenuItem | undefined {
   return menuItems.find(item => item.id === id)
 }
@@ -335,7 +406,6 @@ export function getSectorById(sectorId: string): SectorItem | undefined {
   return sectors.find(s => s.id === sectorId)
 }
 
-// Fallback untuk kode lama, return kosong agar tidak error
 export function getDocuments(categoryId: string): DocumentItem[] {
   return []
 }

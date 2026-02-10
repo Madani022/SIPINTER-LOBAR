@@ -50,10 +50,16 @@ export function SectorsScreen({ menuId, menuTitle }: SectorsScreenProps) {
           {currentSectors.map((sector) => (
             <Card
               key={sector.id}
-              onClick={() => navigateTo({ type: "sector-detail", sectorId: sector.id, sectorTitle: sector.title })}
+              onClick={() => navigateTo({ 
+                type: "sector-detail", 
+                sectorId: sector.id, 
+                sectorTitle: sector.title,
+                
+                // ✅ TAMBAHKAN INI (PENTING BANGET!)
+                categorySlug: sector.categorySlug 
+              })}
               className={cn(
                 "group relative flex cursor-pointer flex-col items-center justify-center text-center",
-                // Mengurangi padding card dari p-6 ke p-4 agar card terlihat lebih compact tapi tetap jelas
                 "p-4 lg:p-5",
                 "bg-white border border-slate-200 shadow-sm transition-all hover:translate-y-[-4px] hover:shadow-md hover:border-[#0F4C81]",
                 "h-full w-full rounded-2xl"
@@ -65,6 +71,9 @@ export function SectorsScreen({ menuId, menuTitle }: SectorsScreenProps) {
               <div className="w-full px-1">
                 <h3 className="text-base font-bold leading-tight text-slate-800 lg:text-lg line-clamp-2">{sector.title}</h3>
                 <p className="mt-1 line-clamp-2 text-xs text-slate-400 lg:text-sm">{sector.description}</p>
+                
+                {/* Debugging Visual: Biar yakin slug-nya kebaca (Boleh dihapus nanti) */}
+                {/* <p className="text-[10px] text-red-500">{sector.categorySlug}</p> */}
               </div>
             </Card>
           ))}

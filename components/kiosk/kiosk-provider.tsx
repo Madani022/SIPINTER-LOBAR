@@ -20,7 +20,10 @@ export type Screen =
       sectorId?: string 
     }
   | { type: "sectors"; menuId: string; menuTitle: string }
-  | { type: "sector-detail"; sectorId: string; sectorTitle: string }
+  | { type: "sector-detail"; 
+      sectorId: string; 
+      sectorTitle: string; 
+      categorySlug?: string; }
   | { type: "pdf-viewer"; document: DocumentItem }
   | { type: "video-player"; title: string; videoUrl: string }
   | { type: "qr-page"; title: string; url: string; description: string }
@@ -102,7 +105,9 @@ export interface SectorItem {
   id: string
   title: string
   description: string
-  icon: any
+  icon: string
+  // TAMBAHAN BARU:
+  categorySlug?: string 
 }
 
 // =========================================
