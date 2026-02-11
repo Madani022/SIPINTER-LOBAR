@@ -41,20 +41,35 @@ export function SubmenuScreen({ menuId, menuTitle }: SubmenuScreenProps) {
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
   const currentItems = allItems.slice(startIndex, startIndex + ITEMS_PER_PAGE)
 
-  // 3. Logika Grid Responsive (Hanya dipakai jika TIDAK ada pagination/halaman tunggal)
+  // 3. Logika Grid Responsive
   const getResponsiveGridClass = (count: number) => {
-    if (count <= 3) return "grid-cols-3 grid-rows-1"
+    // ✅ MODIFIKASI DISINI: Menangani kondisi spesifik jumlah item
+    
+    // Jika cuma 1 item, penuhi layar (1 kolom)
+    if (count === 1) return "grid-cols-1 grid-rows-1"
+    
+    // Jika 2 item, bagi 2 rata (2 kolom x 1 baris) -> MEMENUHI LAYAR
+    if (count === 2) return "grid-cols-2 grid-rows-1"
+    
+    // Jika 3 item, bagi 3 rata
+    if (count === 3) return "grid-cols-3 grid-rows-1"
+
+    // Layout Grid Standar
     if (count === 4) return "grid-cols-2 grid-rows-2"
     if (count <= 6) return "grid-cols-3 grid-rows-2"
     return "grid-cols-4 grid-rows-2"
   }
 
-  // Jika item lebih dari 8, kita paksa Grid 4x2 agar rapi. 
-  // Jika kurang dari 8, kita pakai layout cantik (Giant Card)
+  // Cek apakah pakai pagination atau tidak
   const isPaginated = totalPages > 1
+  
+  // Gunakan logika grid di atas hanya jika TIDAK ada pagination
+  // Jika pagination aktif, kita paksa layout standar (4x2)
   const gridClass = isPaginated ? "grid-cols-4 grid-rows-2" : getResponsiveGridClass(allItems.length)
   
-  // Ukuran kartu menyesuaikan jumlah item (Giant Card logic)
+  // Logic Giant Card:
+  // Kita anggap "Giant" jika itemnya sedikit (<= 3) dan tidak dipaginasi.
+  // Ini akan memperbesar Icon dan Teks secara otomatis.
   const isGiantCard = !isPaginated && allItems.length <= 3
 
   // Handlers
@@ -78,7 +93,7 @@ export function SubmenuScreen({ menuId, menuTitle }: SubmenuScreenProps) {
                     if (item.hasDocuments) {
                       navigateTo({ 
                         type: "documents", 
-                        categoryId: item.categorySlug || item.id, // Pastikan Slug Terkirim
+                        categoryId: item.categorySlug || item.id, 
                         categoryTitle: item.title 
                       })
                     } else if (item.hasContent) {
@@ -98,6 +113,7 @@ export function SubmenuScreen({ menuId, menuTitle }: SubmenuScreenProps) {
                   <div className={cn(
                     "flex items-center justify-center rounded-xl transition-colors duration-300",
                     "bg-slate-100 text-slate-700 group-hover:bg-[#0F4C81] group-hover:text-white",
+                    // Jika Giant Card (<= 3 item), icon jadi sangat besar
                     isGiantCard ? "mb-6 h-36 w-36" : "mb-4 h-20 w-20 lg:h-24 lg:w-24"
                   )}>
                     <DynamicIcon name={item.icon} className={isGiantCard ? "h-16 w-16" : "h-10 w-10"} />

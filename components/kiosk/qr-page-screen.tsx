@@ -45,7 +45,7 @@ export function QrPageScreen({ title, description, url }: QrPageScreenProps) {
 
       </div>
 
-      <NavigationBar title="Kembali ke Dokumen" showBack={true} />
+      <NavigationBar title="SIPETA LOBAR" showBack={true} />
     </div>
   )
 }

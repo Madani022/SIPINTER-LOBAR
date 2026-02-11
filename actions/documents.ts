@@ -26,7 +26,7 @@ export async function getDocuments(filters: {
     const docs = await prisma.document.findMany({
       where: whereClause,
       include: { category: true },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { title: 'asc' },
       take: filters.limit
     })
 

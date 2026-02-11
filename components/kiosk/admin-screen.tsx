@@ -5,7 +5,7 @@ import {
   LayoutDashboard, FileText, Settings, 
   Upload, Trash2, Edit, Wifi, WifiOff,
   Search, MonitorPlay, LogOut, Link as LinkIcon,
-  MousePointerClick, Star, TrendingUp, Activity, Server 
+  MousePointerClick, Star, TrendingUp, Activity, Server, AlertTriangle 
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,16 @@ import {
   Dialog, DialogContent, DialogFooter, 
   DialogHeader, DialogTitle 
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog" // ✅ IMPORT BARU
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
   SelectGroup, SelectLabel
@@ -40,7 +50,7 @@ const DROPDOWN_STRUCTURE = [
 type Category = { id: string; name: string; slug: string }
 type Document = {
   id: string; title: string; slug: string; categoryId: string; category?: Category;
-  filePath: string; fileSize: number; downloadUrl?: string; // Field Link GDrive
+  filePath: string; fileSize: number; downloadUrl?: string; 
   downloadCount: number; viewCount: number;
   isActive: boolean; isFeatured: boolean; createdAt: Date
 }
@@ -68,9 +78,13 @@ export function AdminScreen({ onLogout, onPreviewKiosk }: AdminScreenProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterCategory, setFilterCategory] = useState<string>("all")
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest")
+  
   const [isUploadOpen, setIsUploadOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null)
+
+  // ✅ STATE BARU: ID DOKUMEN YANG AKAN DIHAPUS
+  const [deleteId, setDeleteId] = useState<string | null>(null) 
 
   // --- FETCH DATA ---
   const fetchMainData = async () => {
@@ -155,13 +169,24 @@ export function AdminScreen({ onLogout, onPreviewKiosk }: AdminScreenProps) {
   }, [documents, searchQuery, filterCategory, sortOrder])
 
   // --- ACTIONS ---
-  const handleDeleteDoc = async (id: string) => {
-    if(!confirm("Hapus dokumen ini?")) return
-    const res = await deleteDocument(id)
+  
+  // ✅ FUNGSI 1: TRIGGER POPUP KONFIRMASI
+  const confirmDelete = (id: string) => {
+    setDeleteId(id)
+  }
+
+  // ✅ FUNGSI 2: EKSEKUSI HAPUS (SETELAH KLIK YES DI POPUP)
+  const executeDelete = async () => {
+    if (!deleteId) return
+    
+    const res = await deleteDocument(deleteId)
     if (res.success) {
-        setDocuments(prev => prev.filter(d => d.id !== id))
+        setDocuments(prev => prev.filter(d => d.id !== deleteId))
         fetchMainData()
-    } else alert(res.error)
+        setDeleteId(null) // Tutup popup
+    } else {
+        alert(res.error)
+    }
   }
 
   const handleSaveUpload = async (e: React.FormEvent) => {
@@ -186,7 +211,6 @@ export function AdminScreen({ onLogout, onPreviewKiosk }: AdminScreenProps) {
 
         if (!uploadData.success) throw new Error(uploadData.error)
 
-        // ✅ PERBAIKAN DISINI: Hapus isActive & isFeatured
         const res = await createDocument({
             title, 
             categoryId,
@@ -212,13 +236,13 @@ export function AdminScreen({ onLogout, onPreviewKiosk }: AdminScreenProps) {
       const form = e.target as HTMLFormElement
       const title = (form.elements.namedItem('title') as HTMLInputElement).value
       const categoryId = (form.elements.namedItem('category') as HTMLInputElement).value
-      const downloadUrl = (form.elements.namedItem('downloadUrl') as HTMLInputElement).value // ✅ UPDATE LINK
+      const downloadUrl = (form.elements.namedItem('downloadUrl') as HTMLInputElement).value 
       
       try {
           const res = await updateDocument(selectedDoc.id, { 
               title, 
               categoryId,
-              downloadUrl // Kirim update link
+              downloadUrl 
           })
           if (res.success && res.data) {
               setDocuments(prev => prev.map(d => d.id === selectedDoc.id ? (res.data as Document) : d))
@@ -354,7 +378,7 @@ export function AdminScreen({ onLogout, onPreviewKiosk }: AdminScreenProps) {
                                     <div className="h-8 w-8 rounded bg-red-50 text-red-500 flex items-center justify-center border border-red-100 shrink-0"><FileText className="h-4 w-4"/></div>
                                     <div className="flex flex-col max-w-[200px]">
                                         <span className="truncate font-medium" title={doc.title}>{doc.title}</span>
-                                        {/* INDIKATOR LINK GDRIVE (JIKA ADA) */}
+                                        {/* INDIKATOR LINK GDRIVE */}
                                         {doc.downloadUrl && (
                                             <span className="flex items-center gap-1 text-[10px] text-blue-600 font-medium">
                                                 <LinkIcon className="h-3 w-3" /> GDrive Linked
@@ -365,7 +389,18 @@ export function AdminScreen({ onLogout, onPreviewKiosk }: AdminScreenProps) {
                                 <td className="p-4"><Badge variant="outline" className="font-normal bg-slate-50">{doc.category?.name||"-"}</Badge></td>
                                 <td className="p-4 text-slate-500">{new Date(doc.createdAt).toLocaleDateString('id-ID')}</td>
                                 <td className="p-4 text-slate-500 text-sm">{formatSize(doc.fileSize)}</td>
-                                <td className="p-4 text-right"><div className="flex justify-end gap-1"><Button variant="ghost" size="icon" onClick={() => openEditModal(doc)} className="text-blue-500 hover:bg-blue-50"><Edit className="h-4 w-4"/></Button><Button variant="ghost" size="icon" onClick={() => handleDeleteDoc(doc.id)} className="text-slate-400 hover:bg-red-50 hover:text-red-600"><Trash2 className="h-4 w-4"/></Button></div></td>
+                                <td className="p-4 text-right">
+                                    <div className="flex justify-end gap-1">
+                                        <Button variant="ghost" size="icon" onClick={() => openEditModal(doc)} className="text-blue-500 hover:bg-blue-50">
+                                            <Edit className="h-4 w-4"/>
+                                        </Button>
+                                        
+                                        {/* ✅ KLIK TOMBOL INI MEMBUKA ALERT DIALOG */}
+                                        <Button variant="ghost" size="icon" onClick={() => confirmDelete(doc.id)} className="text-slate-400 hover:bg-red-50 hover:text-red-600">
+                                            <Trash2 className="h-4 w-4"/>
+                                        </Button>
+                                    </div>
+                                </td>
                             </tr>
                         ))}</tbody>
                     </table>
@@ -380,16 +415,13 @@ export function AdminScreen({ onLogout, onPreviewKiosk }: AdminScreenProps) {
            )}
         </main>
         
-        {/* --- MODAL UPLOAD (ADA KEDUANYA) --- */}
+        {/* --- MODAL UPLOAD --- */}
         <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
             <DialogContent className="sm:max-w-[500px]">
                 <form onSubmit={handleSaveUpload}>
                     <DialogHeader><DialogTitle>Upload Dokumen</DialogTitle></DialogHeader>
                     <div className="grid gap-4 py-4">
-                        {/* 1. Judul */}
                         <div className="grid gap-2"><Label>Judul</Label><Input name="title" required /></div>
-                        
-                        {/* 2. Kategori */}
                         <div className="grid gap-2"><Label>Kategori</Label>
                             <Select name="category" required>
                                 <SelectTrigger><SelectValue placeholder="Pilih Kategori" /></SelectTrigger>
@@ -406,37 +438,25 @@ export function AdminScreen({ onLogout, onPreviewKiosk }: AdminScreenProps) {
                                 </SelectContent>
                             </Select>
                         </div>
-                        
                         <div className="my-2 border-t border-slate-100" />
-
-                        {/* 3. FILE LOKAL (WAJIB) */}
                         <div className="grid gap-2">
-                             <Label className="flex items-center justify-between">
-                                File PDF (Wajib)
-                                <span className="text-[10px] text-slate-400 font-normal">Tampil di Layar Kiosk</span>
-                             </Label>
+                             <Label className="flex items-center justify-between">File PDF (Wajib) <span className="text-[10px] text-slate-400 font-normal">Tampil di Layar Kiosk</span></Label>
                              <Input type="file" name="file" accept=".pdf" required />
                         </div>
-
-                        {/* 4. LINK GDRIVE (OPSIONAL) */}
                         <div className="grid gap-2">
-                             <Label className="flex items-center justify-between">
-                                Link GDrive (Opsional) 
-                                <span className="text-[10px] text-blue-500 font-normal">Untuk QR Code Download</span>
-                             </Label>
+                             <Label className="flex items-center justify-between">Link GDrive (Opsional) <span className="text-[10px] text-blue-500 font-normal">Untuk QR Code Download</span></Label>
                              <div className="relative">
                                 <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                                 <Input name="downloadUrl" placeholder="https://drive.google.com/..." className="pl-9" />
                              </div>
                         </div>
-
                     </div>
                     <DialogFooter><Button type="submit" disabled={isSubmitting}>Simpan</Button></DialogFooter>
                 </form>
             </DialogContent>
         </Dialog>
 
-        {/* --- MODAL EDIT (BISA EDIT LINK) --- */}
+        {/* --- MODAL EDIT --- */}
         <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
             <DialogContent className="sm:max-w-[500px]">
                 <form onSubmit={handleSaveEdit}>
@@ -459,7 +479,6 @@ export function AdminScreen({ onLogout, onPreviewKiosk }: AdminScreenProps) {
                                 </SelectContent>
                             </Select>
                         </div>
-
                         <div className="grid gap-2">
                              <Label>Link Google Drive</Label>
                              <div className="relative">
@@ -472,6 +491,30 @@ export function AdminScreen({ onLogout, onPreviewKiosk }: AdminScreenProps) {
                 </form>
             </DialogContent>
         </Dialog>
+
+        {/* ✅ MODAL ALERT DELETE (BARU) */}
+        <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+                        <AlertTriangle className="h-5 w-5" />
+                        Hapus Dokumen?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Tindakan ini tidak dapat dibatalkan. Dokumen ini akan dihapus secara permanen dari server dan database Kiosk.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction 
+                        onClick={executeDelete}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                    >
+                        Ya, Hapus Permanen
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
 
       </div>
     </div>

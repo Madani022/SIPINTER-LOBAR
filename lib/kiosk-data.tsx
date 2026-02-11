@@ -15,7 +15,7 @@ export const menuItems: MenuItem[] = [
         icon: "Info",
         hasContent: true,
         content: {
-          type: "text",
+          type: "profile",
           title: "Tentang DPMPTSP",
           imageUrl: "/logoSipinterLobar.png",
           text: "Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu sebagai penyelenggara urusan penanaman modal dan pelayanan perizinan di Kabupaten Lombok Barat. Berupaya memberikan pelayanan optimal kepada masyarakat dengan menerapkan sistem pelayanan terpadu secara prima guna memberikan kemudahan, kecepatan, dan transparansi. Sehingga Pelayanan berorientasi pada kepuasan masyarakat pencari izin (Customer Satisfaction)."
@@ -267,23 +267,23 @@ export const menuItems: MenuItem[] = [
           ]
         }
       },
-      { 
-        id: "kontak-lokasi", 
-        title: "Informasi Kontak & Lokasi", 
-        description: "Alamat dan kontak MPP", 
-        icon: "Phone",
-        hasContent: true,
-        content: {
-          type: "profile",
-          title: "Kontak & Lokasi MPP",
-          contactInfo: {
-            address: "Gedung MPP Lombok Barat, Jl. Soekarno Hatta No. 2, Giri Menang, Gerung",
-            phone: "(0370) 681234 / 681235",
-            email: "mpp@lombokbaratkab.go.id",
-            hours: "Senin - Kamis: 08.00 - 15.00 WITA, Jumat: 08.00 - 14.00 WITA"
-          }
-        }
-      },
+      // { 
+      //   id: "kontak-lokasi", 
+      //   title: "Informasi Kontak & Lokasi", 
+      //   description: "Alamat dan kontak MPP", 
+      //   icon: "Phone",
+      //   hasContent: true,
+      //   content: {
+      //     type: "profile",
+      //     title: "Kontak & Lokasi MPP",
+      //     contactInfo: {
+      //       address: "Gedung MPP Lombok Barat, Jl. Soekarno Hatta No. 2, Giri Menang, Gerung",
+      //       phone: "(0370) 681234 / 681235",
+      //       email: "mpp@lombokbaratkab.go.id",
+      //       hours: "Senin - Kamis: 08.00 - 15.00 WITA, Jumat: 08.00 - 14.00 WITA"
+      //     }
+      //   }
+      // },
     ]
   },
   {
@@ -292,7 +292,7 @@ export const menuItems: MenuItem[] = [
     description: "Scan QR untuk melihat peta",
     icon: "QrCode",
     isQrCode: true,
-    qrUrl: "https://potensi.lombokbaratkab.go.id",
+    qrUrl: "https://sipeta-lobar.vercel.app",
     qrDescription: "Sistem Informasi Pemetaan Lokasi dan Rekomendasi Usaha Lombok Barat. Scan QR Code untuk mengakses peta interaktif di smartphone Anda."
   },
 ]
