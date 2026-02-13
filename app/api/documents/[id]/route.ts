@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getDocument, updateDocument, deleteDocument } from "@/actions/documents"
+import { getDocuments, updateDocument, deleteDocument } from "@/actions/documents"
 import { isAuthenticated } from "@/lib/auth"
 import { z } from "zod"
 
@@ -11,7 +11,7 @@ interface RouteParams {
 export async function GET(request: Request, { params }: RouteParams) {
   try {
     const { id } = await params
-    const result = await getDocument(id)
+    const result = await getDocuments({ categoryId: id })
 
     if (!result.success) {
       return NextResponse.json(result, { status: 404 })

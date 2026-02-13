@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { isAuthenticated, getSession, extendSession } from "@/lib/auth"
+import { isAuthenticated, getSession } from "@/lib/auth"
 
 export async function GET() {
   try {
@@ -16,7 +16,7 @@ export async function GET() {
     }
 
     // Extend session on activity
-    await extendSession()
+    // await extendSession()
 
     const session = await getSession()
 

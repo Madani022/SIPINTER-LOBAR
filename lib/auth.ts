@@ -25,3 +25,15 @@ export async function getSession() {
   const session = cookieStore.get("admin_session")
   return session?.value // Mengembalikan User ID
 }
+
+export async function logout() {
+  const { cookies } = await import("next/headers");
+  (await cookies()).delete("session_token"); // Sesuaikan dengan nama cookie kamu
+}
+
+// Contoh fungsi extendSession (memperbarui masa berlaku session)
+export async function extendSession() {
+  // Logika untuk memperpanjang session di sini
+  // Biasanya mengupdate expiration date di database atau cookie
+  console.log("Session extended");
+}
