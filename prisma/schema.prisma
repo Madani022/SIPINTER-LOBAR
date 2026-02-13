@@ -31,7 +31,7 @@ model AdminUser {
 model Category {
   id          String     @id @default(cuid())
   name        String     @unique
-  slug        String     @unique // <--- INI KUNCINYA
+  slug        String     @unique 
   description String?    @db.Text
   icon        String?
   order       Int        @default(0)
